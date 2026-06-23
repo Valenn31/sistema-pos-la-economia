@@ -47,7 +47,11 @@ function line(left, right, total = 42) {
 }
 
 export function buildTicketHtml(sale, settings = {}) {
-  const SEP = '─'.repeat(42)
+  const paperWidth = parseInt(settings.paper_width) || 80
+  const bodyWidth  = paperWidth === 58 ? '48mm' : '72mm'
+  const pageSize   = `${paperWidth}mm auto`
+  const charWidth  = paperWidth === 58 ? 32 : 42
+
   const items = (sale.sale_items ?? [])
   const payments = (sale.sale_payments ?? [])
 
@@ -66,7 +70,8 @@ export function buildTicketHtml(sale, settings = {}) {
     // Truncate name to 24 chars if qty line is long
     const qtyStr   = `${qty} x ${fmtCurrency(price)}`
     const subStr   = fmtCurrency(sub)
-    const nameShort = name.length > 24 ? name.substring(0, 23) + '…' : name
+    const maxName = paperWidth === 58 ? 18 : 24
+    const nameShort = name.length > maxName ? name.substring(0, maxName - 1) + '…' : name
     return `
       <tr>
         <td colspan="2" style="padding-top:4px">${nameShort}</td>
@@ -92,12 +97,12 @@ export function buildTicketHtml(sale, settings = {}) {
   <meta charset="UTF-8">
   <title>Ticket #${sale.sale_number}</title>
   <style>
-    @page { size: 80mm auto; margin: 4mm 4mm; }
+    @page { size: ${pageSize}; margin: 4mm 4mm; }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: 'Courier New', Courier, monospace;
-      font-size: 10pt;
-      width: 72mm;
+      font-size: ${paperWidth === 58 ? '8.5pt' : '10pt'};
+      width: ${bodyWidth};
       color: #000;
       background: #fff;
     }

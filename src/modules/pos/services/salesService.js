@@ -112,10 +112,16 @@ export async function createSale(payload) {
   // 5. Si algún pago es en "cuenta", incrementar saldo del cliente
   const cuentaPayment = payments.find((p) => p.method === 'cuenta')
   if (customerId && cuentaPayment) {
-    await supabase.rpc('increment_customer_balance', {
+    const { error: rpcErr } = await supabase.rpc('increment_customer_balance', {
       p_customer_id: customerId,
       p_amount:      cuentaPayment.amount,
     })
+    if (rpcErr) {
+      const { data: cust } = await supabase
+        .from('customers').select('current_balance').eq('id', customerId).single()
+      const newBalance = (Number(cust?.current_balance) || 0) + cuentaPayment.amount
+      await supabase.from('customers').update({ current_balance: newBalance }).eq('id', customerId)
+    }
   }
 
   return sale

@@ -69,15 +69,29 @@ export async function toggleCustomerActive(id, isActive) {
 }
 
 /**
- * Registra un abono de deuda: reduce current_balance del cliente.
- * Usa increment_customer_balance con valor negativo (SECURITY DEFINER).
+ * Registra un abono de deuda: reduce current_balance y guarda el pago.
  */
-export async function registerPayment({ customerId, amount }) {
-  const { error } = await supabase.rpc('increment_customer_balance', {
+export async function registerPayment({ customerId, amount, method = 'efectivo', notes, userId }) {
+  const { error: rpcErr } = await supabase.rpc('increment_customer_balance', {
     p_customer_id: customerId,
     p_amount:      -Math.abs(amount),
   })
-  if (error) throw error
+  if (rpcErr) {
+    const { data: cust } = await supabase
+      .from('customers').select('current_balance').eq('id', customerId).single()
+    const newBalance = Math.max(0, (Number(cust?.current_balance) || 0) - Math.abs(amount))
+    const { error: updErr } = await supabase.from('customers').update({ current_balance: newBalance }).eq('id', customerId)
+    if (updErr) throw updErr
+  }
+
+  const { error: payErr } = await supabase.from('customer_payments').insert({
+    customer_id: customerId,
+    amount:      Math.abs(amount),
+    method:      method || 'efectivo',
+    notes:       notes || null,
+    user_id:     userId || null,
+  })
+  if (payErr) throw payErr
 }
 
 /** Últimas ventas del cliente con total y método de pago. */
@@ -91,6 +105,70 @@ export async function getCustomerSales(customerId, limit = 20) {
     .limit(limit)
   if (error) throw error
   return data ?? []
+}
+
+/**
+ * Estado de cuenta: ventas en cta cte + pagos, ordenados por fecha con saldo acumulado.
+ */
+export async function getAccountStatement(customerId) {
+  const [salesRes, paymentsRes] = await Promise.all([
+    supabase
+      .from('sales')
+      .select(`
+        id, sale_number, created_at, total,
+        sale_payments(method, amount),
+        sale_items(quantity, unit_price, subtotal, products(name))
+      `)
+      .eq('customer_id', customerId)
+      .eq('status', 'completed')
+      .order('created_at', { ascending: true }),
+    supabase
+      .from('customer_payments')
+      .select('id, amount, method, notes, created_at')
+      .eq('customer_id', customerId)
+      .order('created_at', { ascending: true }),
+  ])
+  if (salesRes.error) throw salesRes.error
+  if (paymentsRes.error) throw paymentsRes.error
+
+  const movements = []
+
+  for (const sale of (salesRes.data ?? [])) {
+    const cuentaPayment = (sale.sale_payments ?? []).find((p) => p.method === 'cuenta')
+    if (cuentaPayment) {
+      movements.push({
+        type: 'debit',
+        date: sale.created_at,
+        amount: Number(cuentaPayment.amount),
+        description: `Venta #${sale.sale_number}`,
+        saleTotal: Number(sale.total),
+        items: sale.sale_items ?? [],
+        id: sale.id,
+      })
+    }
+  }
+
+  for (const pay of (paymentsRes.data ?? [])) {
+    movements.push({
+      type: 'credit',
+      date: pay.created_at,
+      amount: Number(pay.amount),
+      description: `Pago — ${pay.method}`,
+      notes: pay.notes,
+      id: pay.id,
+    })
+  }
+
+  movements.sort((a, b) => new Date(a.date) - new Date(b.date))
+
+  let balance = 0
+  for (const m of movements) {
+    if (m.type === 'debit') balance += m.amount
+    else balance -= m.amount
+    m.balance = Math.round(balance * 100) / 100
+  }
+
+  return movements
 }
 
 function cleanPayload(d) {

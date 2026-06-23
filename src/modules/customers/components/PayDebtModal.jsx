@@ -39,7 +39,7 @@ export function PayDebtModal({ open, onClose, onSave, customer }) {
 
   return (
     <Modal open={open} onClose={onClose} title="Registrar pago de deuda" size="sm">
-      <div className="space-y-4">
+      <div className="space-y-4 p-5">
 
         {/* Info del cliente */}
         <div className="bg-surface-800 rounded-xl p-4 space-y-1">

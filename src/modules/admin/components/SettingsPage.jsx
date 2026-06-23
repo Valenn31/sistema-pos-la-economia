@@ -18,11 +18,13 @@ export function SettingsPage() {
   useEffect(() => {
     getSettings()
       .then((s) => reset({
-        business_name:    s.business_name    ?? '',
-        cuit:             s.cuit             ?? '',
-        address:          s.address          ?? '',
-        fiscal_condition: s.fiscal_condition ?? '',
-        receipt_footer:   s.receipt_footer   ?? '',
+        business_name:      s.business_name      ?? '',
+        cuit:               s.cuit               ?? '',
+        address:            s.address            ?? '',
+        fiscal_condition:   s.fiscal_condition   ?? '',
+        receipt_footer:     s.receipt_footer     ?? '',
+        paper_width:        s.paper_width        ?? '80',
+        expiry_alert_days:  s.expiry_alert_days  ?? '30',
       }))
       .catch(() => toast.error('Error al cargar configuración'))
       .finally(() => setLoading(false))
@@ -79,6 +81,39 @@ export function SettingsPage() {
               placeholder="¡Gracias por su compra! Vuelva pronto."
               {...register('receipt_footer')}
             />
+          </div>
+
+          <div className="flex justify-end pt-2">
+            <Button type="submit" loading={isSubmitting}>Guardar configuración</Button>
+          </div>
+        </form>
+
+        <form onSubmit={handleSubmit(onSubmit)} className="card space-y-5">
+          <h2 className="text-base font-semibold text-white">Impresora / Tickets</h2>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="label-base">Ancho de papel</label>
+              <select className="input-base" {...register('paper_width')}>
+                <option value="58">58 mm (térmico chico)</option>
+                <option value="80">80 mm (térmico estándar)</option>
+              </select>
+              <p className="text-xs text-surface-500 mt-1">Ajusta el formato del ticket al tamaño del rollo</p>
+            </div>
+            <div>
+              <label className="label-base">Alerta de vencimiento (días)</label>
+              <input type="number" min="1" max="365" step="1" className="input-base" {...register('expiry_alert_days')} />
+              <p className="text-xs text-surface-500 mt-1">Productos que vencen dentro de estos días se alertan en el dashboard</p>
+            </div>
+          </div>
+
+          <div className="bg-surface-800 border border-surface-700 rounded-xl p-4 space-y-2">
+            <p className="text-sm font-medium text-white">Impresión silenciosa (sin diálogo)</p>
+            <p className="text-xs text-surface-400">
+              Para que el ticket se imprima directo al tocar "Imprimir" sin abrir el cuadro de impresión de Chrome,
+              configurá la ticketera como impresora predeterminada en Windows y abrí el sistema desde el acceso
+              directo <span className="text-primary-400 font-medium">POS La Economía.bat</span> que está en la carpeta del proyecto.
+            </p>
           </div>
 
           <div className="flex justify-end pt-2">

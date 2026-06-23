@@ -13,11 +13,7 @@
 
 ## 👤 Clientes / Cuenta Corriente
 
-- LA DEUDA EN LA TABLA APARECE SIEMPRE 0
-- PODER COBRAR CUENTA CORRIENTE DESDE EL SECTOR DE BUSQQUEDA DE CLIENTES
-- GUARDAR VENTA DENTRO DEL CLIENTE CUANDO ANOTE EN ECUENTA CORRIENTE, AGREGAR FICHA DE RESUMEN DE CUENTA EN CADA CLIENTE CON SUS MOVIMIENTOS, CON ID DE COMPRA. DE DEUEDA Y PAGOS
 - QUE SE PUEDA IMPRIMIR HISTORIAL DE DEUDA DE CLIENTE
-- HACER QUE EL CLIENTE PUEDA SALDAR LA DEUDA
 ---
 
 ## 🏧 Cajero / Caja
@@ -32,7 +28,7 @@
 
 ## 🏪 Proveedores / Notas de Pedido
 
-- PROVEEDORES, AL HACER UNA NOTA DE COMPRA, EL DESPLEGABLE NO MUESTRA LOS PROVEEDORES
+
 
 ---
 
@@ -44,7 +40,6 @@
 
 ## 🖨️ Impresión / Tickets
 
-- IMPRIMIR CON LA TICKETERA + CONFIG DE TAMAÑO
 - HACER UN GENERADOR DE TICKETS (OSEA LOS QUE VAN EN GONDOLA) CON LA INFO DEL PRODUCTO Y EL PRECIO (CORTE UN WORD)
 
 ---
@@ -74,3 +69,9 @@
 - ✅ que detecte las cajas del dia de la fecha para los reportes (bug de timezone: el último día del rango no aparecía)
 - ✅ devolucion no tendria que agregar a stock automaticamente, sino preguntarlo (checkbox) + que tenga en cuenta la devolucion de ese dinero en caja
 - ✅ Que en modulo repositor cuando voy a cargar nota de pedido no aparezca la opción Proveedores (campo oculto para repositor, supplier_id ahora opcional)
+- ✅ GUARDAR VENTA DENTRO DEL CLIENTE CUANDO ANOTE EN CTA CTE + FICHA DE RESUMEN DE CUENTA CON MOVIMIENTOS, DEUDA Y PAGOS
+- ✅ PODER COBRAR CUENTA CORRIENTE DESDE EL SECTOR DE BUSQUEDA DE CLIENTES
+- ✅ HACER QUE EL CLIENTE PUEDA SALDAR LA DEUDA (pagos ahora se registran en customer_payments)
+- ✅ LA DEUDA EN LA TABLA APARECE SIEMPRE 0 (RPC fallaba silenciosamente, agregado fallback directo)
+- ✅ PROVEEDORES, AL HACER UNA NOTA DE COMPRA, EL DESPLEGABLE NO MUESTRA LOS PROVEEDORES
+- ✅ IMPRIMIR CON LA TICKETERA + CONFIG DE TAMAÑO (config en Settings, ancho 58/80mm, launcher .bat para impresión silenciosa)

@@ -99,11 +99,16 @@ export async function createReturn({ saleId, userId, items, reason, sale, restor
   if (cuentaPayment && sale.customer_id) {
     const proportion  = sale.total > 0 ? total / sale.total : 1
     const reduction   = parseFloat((cuentaPayment.amount * proportion).toFixed(2))
-    // increment_customer_balance con valor negativo = decremento
-    await supabase.rpc('increment_customer_balance', {
+    const { error: rpcErr } = await supabase.rpc('increment_customer_balance', {
       p_customer_id: sale.customer_id,
       p_amount:      -reduction,
     })
+    if (rpcErr) {
+      const { data: cust } = await supabase
+        .from('customers').select('current_balance').eq('id', sale.customer_id).single()
+      const newBalance = Math.max(0, (Number(cust?.current_balance) || 0) - reduction)
+      await supabase.from('customers').update({ current_balance: newBalance }).eq('id', sale.customer_id)
+    }
   }
 
   return ret

@@ -16,6 +16,7 @@ import { Button }                from '@/shared/components/Button'
 import { Badge }                 from '@/shared/components/Badge'
 import { Spinner }               from '@/shared/components/Spinner'
 import { useDebounce }           from '@/shared/hooks/useDebounce'
+import { useAuthStore }          from '@/shared/store/authStore'
 import { CustomerFormModal }     from './CustomerFormModal'
 import { PayDebtModal }          from './PayDebtModal'
 import { CustomerHistoryModal }  from './CustomerHistoryModal'
@@ -26,6 +27,7 @@ import {
 import { formatCurrency } from '@/shared/utils/formatters'
 
 export function CustomersPage() {
+  const { profile } = useAuthStore()
   const [customers,    setCustomers]    = useState([])
   const [loading,      setLoading]      = useState(true)
   const [search,       setSearch]       = useState('')
@@ -80,7 +82,7 @@ export function CustomersPage() {
 
   const handlePayment = async (data) => {
     try {
-      await registerPayment({ customerId: payTarget.id, ...data })
+      await registerPayment({ customerId: payTarget.id, userId: profile?.id, ...data })
       toast.success(`Pago de ${formatCurrency(data.amount)} registrado`)
       setPayTarget(null)
       load()
@@ -263,6 +265,8 @@ export function CustomersPage() {
         open={!!historyCustomer}
         onClose={() => setHistoryCustomer(null)}
         customer={historyCustomer}
+        userId={profile?.id}
+        onPaymentDone={load}
       />
     </div>
   )
