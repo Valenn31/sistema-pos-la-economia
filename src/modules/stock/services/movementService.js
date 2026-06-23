@@ -132,31 +132,62 @@ export async function receiveGoods({ productId, locationId, quantity, userId, re
 }
 
 /**
- * Retorna lotes con fecha de vencimiento agrupados por producto.
+ * Retorna productos con fecha de vencimiento (desde products.expiry_date
+ * y desde lotes en stock_movements.expiry_date).
  * Incluye estado: 'expired' | 'critical' (≤7d) | 'warning' (≤30d) | 'ok'
  */
 export async function getExpiryAlerts() {
-  const { data, error } = await supabase
-    .from('stock_movements')
-    .select('id, product_id, quantity, expiry_date, created_at, products(name, sku)')
-    .eq('movement_type', 'compra')
-    .not('expiry_date', 'is', null)
-    .order('expiry_date', { ascending: true })
-  if (error) throw error
+  const [movRes, prodRes] = await Promise.all([
+    supabase
+      .from('stock_movements')
+      .select('id, product_id, quantity, expiry_date, created_at, products(name, sku)')
+      .eq('movement_type', 'compra')
+      .not('expiry_date', 'is', null)
+      .order('expiry_date', { ascending: true }),
+    supabase
+      .from('products')
+      .select('id, name, sku, expiry_date')
+      .eq('is_active', true)
+      .eq('has_expiry', true)
+      .not('expiry_date', 'is', null),
+  ])
+  if (movRes.error) throw movRes.error
+  if (prodRes.error) throw prodRes.error
 
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   const in7  = new Date(today); in7.setDate(in7.getDate() + 7)
   const in30 = new Date(today); in30.setDate(in30.getDate() + 30)
 
-  return (data ?? []).map((row) => {
-    const exp = new Date(row.expiry_date)
-    let status = 'ok'
-    if (exp < today)  status = 'expired'
-    else if (exp <= in7)  status = 'critical'
-    else if (exp <= in30) status = 'warning'
-    return { ...row, status }
-  })
+  const classify = (expDate) => {
+    const exp = new Date(expDate)
+    if (exp < today) return 'expired'
+    if (exp <= in7)  return 'critical'
+    if (exp <= in30) return 'warning'
+    return 'ok'
+  }
+
+  const movRows = (movRes.data ?? []).map((row) => ({
+    ...row, source: 'batch', status: classify(row.expiry_date),
+  }))
+
+  const seenProductIds = new Set(movRows.map((r) => r.product_id))
+  const prodRows = (prodRes.data ?? [])
+    .filter((p) => !seenProductIds.has(p.id))
+    .map((p) => ({
+      id: p.id,
+      product_id: p.id,
+      quantity: null,
+      expiry_date: p.expiry_date,
+      created_at: null,
+      products: { name: p.name, sku: p.sku },
+      source: 'product',
+      status: classify(p.expiry_date),
+    }))
+
+  return [...movRows, ...prodRows].sort((a, b) =>
+    new Date(a.expiry_date) - new Date(b.expiry_date)
+  )
 }
 
 // ── Historial de movimientos ──────────────────────────────────────────

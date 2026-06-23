@@ -14,7 +14,7 @@
  * @param {Function}        onCancel   - () => void  (solo para mode='close')
  */
 import { useState } from 'react'
-import { DollarSign, X, Store, TrendingUp, CreditCard } from 'lucide-react'
+import { DollarSign, X, Store, TrendingUp, CreditCard, RotateCcw } from 'lucide-react'
 import { Button } from '@/shared/components/Button'
 import { formatCurrency } from '@/shared/utils/formatters'
 
@@ -110,11 +110,21 @@ export function CashSessionModal({ mode = 'open', registers = [], session, total
                   <span className="text-surface-400 flex items-center gap-2">
                     <TrendingUp className="w-4 h-4" /> Ventas del turno
                   </span>
-                  <span className="font-semibold text-white">{totals.salesCount} ventas</span>
+                  <span className="font-semibold text-white">{totals.salesCount} ventas — {formatCurrency(totals.total)}</span>
                 </div>
+                {totals.returnsCount > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-red-400 flex items-center gap-2">
+                      <RotateCcw className="w-4 h-4" /> Devoluciones
+                    </span>
+                    <span className="font-semibold text-red-400">
+                      {totals.returnsCount} dev. — −{formatCurrency(totals.returnsTotal)}
+                    </span>
+                  </div>
+                )}
                 <div className="flex justify-between font-bold text-lg pt-1 border-t border-surface-800">
-                  <span className="text-surface-300">Total recaudado</span>
-                  <span className="text-primary-400">{formatCurrency(totals.total)}</span>
+                  <span className="text-surface-300">Neto del turno</span>
+                  <span className="text-primary-400">{formatCurrency(totals.total - (totals.returnsTotal ?? 0))}</span>
                 </div>
               </div>
               {/* Desglose por método */}

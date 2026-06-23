@@ -38,8 +38,10 @@ export function SalesReportTab() {
   const search = async () => {
     setLoading(true)
     try {
-      const fromDt = new Date(from); fromDt.setHours(0, 0, 0, 0)
-      const toDt   = new Date(to);   toDt.setHours(23, 59, 59, 999)
+      const [fy, fm, fd] = from.split('-').map(Number)
+      const [ty, tm, td] = to.split('-').map(Number)
+      const fromDt = new Date(fy, fm - 1, fd, 0, 0, 0, 0)
+      const toDt   = new Date(ty, tm - 1, td, 23, 59, 59, 999)
       const data   = await getSalesReport({ from: fromDt.toISOString(), to: toDt.toISOString() })
       setSales(data)
       setSummary(getSalesSummary(data))

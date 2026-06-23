@@ -50,7 +50,8 @@ export async function getProducts({ search = '', categoryId = null, activeOnly =
     .from('products')
     .select(`
       *,
-      categories(id, name)
+      categories(id, name),
+      stock(quantity)
     `)
     .order('name')
 
@@ -122,6 +123,7 @@ function cleanPayload(d) {
     iva_included:    Boolean(d.iva_included),
     min_stock:       parseFloat(d.min_stock)    || 0,
     has_expiry:      Boolean(d.has_expiry),
+    expiry_date:     d.expiry_date || null,
     is_active:       d.is_active !== false,
   }
 }

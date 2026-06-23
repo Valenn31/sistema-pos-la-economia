@@ -2,7 +2,7 @@
  * DashboardPage — Panel principal con KPIs del día.
  */
 import { useState, useEffect } from 'react'
-import { ShoppingCart, DollarSign, AlertTriangle, Users, RefreshCw, Store } from 'lucide-react'
+import { ShoppingCart, DollarSign, AlertTriangle, Users, RefreshCw, Store, Clock } from 'lucide-react'
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar } from 'recharts'
 import toast from 'react-hot-toast'
 import { Spinner } from '@/shared/components/Spinner'
@@ -71,7 +71,7 @@ export function DashboardPage() {
         </div>
 
         {/* KPIs del día */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           <KpiCard
             icon={ShoppingCart}
             label="Ventas hoy"
@@ -97,6 +97,13 @@ export function DashboardPage() {
             label="Clientes c/ deuda"
             value={stats.customersDebt}
             color={stats.customersDebt > 0 ? 'blue' : 'primary'}
+          />
+          <KpiCard
+            icon={Clock}
+            label="Por vencer"
+            value={stats.expiryCount}
+            sub={`próximos ${stats.expiryAlertDays} días`}
+            color={stats.expiryCount > 0 ? 'red' : 'primary'}
           />
         </div>
 
@@ -162,8 +169,8 @@ export function DashboardPage() {
           </div>
         )}
 
-        {/* Dos columnas: stock bajo + deudores */}
-        <div className="grid md:grid-cols-2 gap-4">
+        {/* Tres columnas: stock bajo + vencimientos + deudores */}
+        <div className="grid md:grid-cols-3 gap-4">
           {/* Stock bajo */}
           <div className="card">
             <h2 className="text-sm font-semibold text-surface-400 uppercase tracking-wider mb-3">
@@ -177,6 +184,27 @@ export function DashboardPage() {
                   <div key={p.name} className="flex items-center justify-between py-1.5 border-b border-surface-800 last:border-0">
                     <span className="text-sm text-white">{p.name}</span>
                     <Badge color="yellow">{p.qty} / {p.minStock} mín.</Badge>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Vencimientos */}
+          <div className="card">
+            <h2 className="text-sm font-semibold text-surface-400 uppercase tracking-wider mb-3">
+              Productos por vencer
+            </h2>
+            {stats.expiryItems.length === 0 ? (
+              <p className="text-surface-600 text-sm">Sin vencimientos próximos</p>
+            ) : (
+              <div className="space-y-2">
+                {stats.expiryItems.map((p) => (
+                  <div key={p.id} className="flex items-center justify-between py-1.5 border-b border-surface-800 last:border-0">
+                    <span className="text-sm text-white">{p.name}</span>
+                    <Badge color={p.daysLeft <= 0 ? 'red' : p.daysLeft <= 7 ? 'yellow' : 'gray'}>
+                      {p.daysLeft <= 0 ? 'Vencido' : `${p.daysLeft}d`}
+                    </Badge>
                   </div>
                 ))}
               </div>

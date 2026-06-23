@@ -39,7 +39,7 @@ export async function getPurchaseNoteById(id) {
 export async function createPurchaseNote({ supplierId, items, notes, createdBy }) {
   const { data: note, error: noteErr } = await supabase
     .from('purchase_notes')
-    .insert({ supplier_id: supplierId, notes: notes || null, created_by: createdBy })
+    .insert({ supplier_id: supplierId || null, notes: notes || null, created_by: createdBy })
     .select()
     .single()
   if (noteErr) throw noteErr

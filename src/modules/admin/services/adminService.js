@@ -156,7 +156,7 @@ export async function getDashboardStats() {
   today.setHours(0, 0, 0, 0)
   const todayIso = today.toISOString()
 
-  const [salesRes, stockRes, customersRes, sessionsRes] = await Promise.all([
+  const [salesRes, stockRes, customersRes, sessionsRes, expiryRes, settingsRes] = await Promise.all([
     supabase
       .from('sales')
       .select('id, total, created_at')
@@ -175,6 +175,17 @@ export async function getDashboardStats() {
       .from('cash_sessions')
       .select('id, register_id, opened_at, status, cash_registers(name)')
       .eq('status', 'open'),
+    supabase
+      .from('products')
+      .select('id, name, expiry_date')
+      .eq('is_active', true)
+      .eq('has_expiry', true)
+      .not('expiry_date', 'is', null),
+    supabase
+      .from('app_settings')
+      .select('value')
+      .eq('key', 'expiry_alert_days')
+      .maybeSingle(),
   ])
 
   const todaySales = salesRes.data ?? []
@@ -191,6 +202,16 @@ export async function getDashboardStats() {
   const lowStockProducts = Object.values(stockByProduct)
     .filter((p) => p.minStock > 0 && p.qty <= p.minStock)
 
+  const alertDays = parseInt(settingsRes.data?.value) || 30
+  const now = new Date()
+  const expiryProducts = (expiryRes.data ?? [])
+    .map((p) => {
+      const daysLeft = Math.ceil((new Date(p.expiry_date) - now) / 86400000)
+      return { ...p, daysLeft }
+    })
+    .filter((p) => p.daysLeft <= alertDays)
+    .sort((a, b) => a.daysLeft - b.daysLeft)
+
   return {
     ventasHoy:       todaySales.length,
     totalHoy,
@@ -199,5 +220,8 @@ export async function getDashboardStats() {
     customersDebt:   (customersRes.data ?? []).length,
     topDebtors:      (customersRes.data ?? []).slice(0, 5),
     activeSessions:  sessionsRes.data ?? [],
+    expiryCount:     expiryProducts.length,
+    expiryItems:     expiryProducts.slice(0, 5),
+    expiryAlertDays: alertDays,
   }
 }

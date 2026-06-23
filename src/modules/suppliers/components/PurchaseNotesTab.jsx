@@ -82,7 +82,7 @@ export function PurchaseNotesTab({ suppliers }) {
           <thead>
             <tr className="border-b border-surface-800 text-surface-400 text-left">
               <th className="px-4 py-3 font-medium">#</th>
-              <th className="px-4 py-3 font-medium">Proveedor</th>
+              {isAdmin && <th className="px-4 py-3 font-medium">Proveedor</th>}
               <th className="px-4 py-3 font-medium">Creada por</th>
               <th className="px-4 py-3 font-medium">Fecha</th>
               <th className="px-4 py-3 font-medium text-center">Estado</th>
@@ -91,12 +91,12 @@ export function PurchaseNotesTab({ suppliers }) {
           </thead>
           <tbody className="divide-y divide-surface-800">
             {notes.length === 0 && (
-              <tr><td colSpan={6} className="text-center text-surface-600 py-10">Sin notas de pedido</td></tr>
+              <tr><td colSpan={isAdmin ? 6 : 5} className="text-center text-surface-600 py-10">Sin notas de pedido</td></tr>
             )}
             {notes.map((n) => (
               <tr key={n.id} className="hover:bg-surface-800/50 transition-colors">
                 <td className="px-4 py-3 font-mono text-surface-400 text-xs">#{n.note_number}</td>
-                <td className="px-4 py-3 font-medium text-white">{n.suppliers?.razon_social ?? '—'}</td>
+                {isAdmin && <td className="px-4 py-3 font-medium text-white">{n.suppliers?.razon_social ?? 'Sin asignar'}</td>}
                 <td className="px-4 py-3 text-surface-400">{n.profiles?.full_name ?? '—'}</td>
                 <td className="px-4 py-3 text-surface-400 text-xs">{formatDateTime(n.created_at)}</td>
                 <td className="px-4 py-3 text-center">

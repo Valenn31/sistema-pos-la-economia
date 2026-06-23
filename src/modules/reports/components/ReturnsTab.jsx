@@ -33,6 +33,7 @@ export function ReturnsTab() {
   const [searching,   setSearching]   = useState(false)
   const [processing,  setProcessing]  = useState(false)
   const [done,        setDone]        = useState(false)
+  const [restoreStock, setRestoreStock] = useState(true)
 
   // Mapa de cantidades ya devueltas por sale_item_id
   const returnedMap = useMemo(() => {
@@ -109,7 +110,7 @@ export function ReturnsTab() {
 
     setProcessing(true)
     try {
-      await createReturn({ saleId: sale.id, userId: user.id, items, reason, sale })
+      await createReturn({ saleId: sale.id, userId: user.id, items, reason, sale, restoreStock })
       toast.success('Devolución procesada correctamente')
       setDone(true)
       setSale(null)
@@ -146,7 +147,7 @@ export function ReturnsTab() {
       {done && (
         <div className="card flex items-center gap-3 border-green-700 bg-green-900/20">
           <CheckCircle className="w-5 h-5 text-green-400 shrink-0" />
-          <p className="text-green-300 text-sm">Devolución procesada. El stock fue restaurado.</p>
+          <p className="text-green-300 text-sm">Devolución procesada.</p>
         </div>
       )}
 
@@ -278,6 +279,19 @@ export function ReturnsTab() {
                 onChange={(e) => setReason(e.target.value)}
               />
             </div>
+
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                className="checkbox-base"
+                checked={restoreStock}
+                onChange={(e) => setRestoreStock(e.target.checked)}
+              />
+              <span className="text-sm text-surface-300">Devolver productos al stock</span>
+              {!restoreStock && (
+                <span className="text-xs text-yellow-400">(no se repondrá mercadería)</span>
+              )}
+            </label>
 
             <div className="flex items-center justify-between">
               <div>

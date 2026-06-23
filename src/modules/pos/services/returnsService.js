@@ -42,7 +42,7 @@ export async function getPreviousReturns(saleId) {
   return data ?? []
 }
 
-export async function createReturn({ saleId, userId, items, reason, sale }) {
+export async function createReturn({ saleId, userId, items, reason, sale, restoreStock = true }) {
   const total = items.reduce((s, i) => s + i.subtotal, 0)
 
   // 1. Cabecera de devolución
@@ -66,29 +66,31 @@ export async function createReturn({ saleId, userId, items, reason, sale }) {
   )
   if (itemsErr) throw itemsErr
 
-  // 3. Restaurar stock en "En Estantería"
-  const { data: loc } = await supabase
-    .from('locations')
-    .select('id')
-    .eq('name', 'En Estantería')
-    .single()
+  // 3. Restaurar stock en "En Estantería" (solo si se pidió)
+  if (restoreStock) {
+    const { data: loc } = await supabase
+      .from('locations')
+      .select('id')
+      .eq('name', 'En Estantería')
+      .single()
 
-  if (loc) {
-    for (const item of items) {
-      await supabase.rpc('increment_stock', {
-        p_product_id:  item.productId,
-        p_location_id: loc.id,
-        p_quantity:    item.quantity,
-      })
-      await supabase.from('stock_movements').insert({
-        product_id:     item.productId,
-        to_location_id: loc.id,
-        quantity:       item.quantity,
-        movement_type:  'devolucion',
-        reference_id:   ret.id,
-        reference_type: 'return',
-        user_id:        userId,
-      })
+    if (loc) {
+      for (const item of items) {
+        await supabase.rpc('increment_stock', {
+          p_product_id:  item.productId,
+          p_location_id: loc.id,
+          p_quantity:    item.quantity,
+        })
+        await supabase.from('stock_movements').insert({
+          product_id:     item.productId,
+          to_location_id: loc.id,
+          quantity:       item.quantity,
+          movement_type:  'devolucion',
+          reference_id:   ret.id,
+          reference_type: 'return',
+          user_id:        userId,
+        })
+      }
     }
   }
 

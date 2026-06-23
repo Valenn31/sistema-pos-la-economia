@@ -58,22 +58,31 @@ export async function closeCashSession(sessionId, closingAmount) {
  * @returns {{ totals: object, salesCount: number }}
  */
 export async function getSessionTotals(sessionId) {
-  const { data, error } = await supabase
-    .from('sales')
-    .select('total, sale_payments(method, amount)')
-    .eq('session_id', sessionId)
-    .eq('status', 'completed')
-  if (error) throw error
+  const [sessionRes, salesRes] = await Promise.all([
+    supabase.from('cash_sessions').select('opened_at').eq('id', sessionId).single(),
+    supabase.from('sales').select('total, sale_payments(method, amount)')
+      .eq('session_id', sessionId).eq('status', 'completed'),
+  ])
+  if (sessionRes.error) throw sessionRes.error
+  if (salesRes.error) throw salesRes.error
+
+  const { data: returnsData } = await supabase
+    .from('returns')
+    .select('total, created_at')
+    .gte('created_at', sessionRes.data.opened_at)
 
   const totals = { efectivo: 0, debito: 0, credito: 0, qr: 0, transferencia: 0, cuenta: 0 }
   let total = 0
 
-  data.forEach((sale) => {
+  salesRes.data.forEach((sale) => {
     total += Number(sale.total)
     ;(sale.sale_payments ?? []).forEach((p) => {
       totals[p.method] = (totals[p.method] ?? 0) + Number(p.amount)
     })
   })
 
-  return { totals, total, salesCount: data.length }
+  const returnsTotal = (returnsData ?? []).reduce((s, r) => s + Number(r.total), 0)
+  const returnsCount = (returnsData ?? []).length
+
+  return { totals, total, salesCount: salesRes.data.length, returnsTotal, returnsCount }
 }

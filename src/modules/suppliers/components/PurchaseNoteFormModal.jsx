@@ -14,8 +14,9 @@ import { getProducts } from '@/modules/stock/services/productService'
 import { formatCurrency } from '@/shared/utils/formatters'
 
 export function PurchaseNoteFormModal({ open, onClose, onSaved, note, suppliers }) {
-  const { profile } = useAuthStore()
+  const { profile, activeRole } = useAuthStore()
   const isEditing = !!note
+  const isRepositor = activeRole === 'repositor'
 
   const [products, setProducts] = useState([])
   const { register, control, handleSubmit, reset, watch, formState: { errors, isSubmitting } } = useForm({
@@ -74,17 +75,18 @@ export function PurchaseNoteFormModal({ open, onClose, onSaved, note, suppliers 
       <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-5">
 
         {/* Proveedor + Notas */}
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="label-base">Proveedor *</label>
-            <select className="input-base" {...register('supplier_id', { required: 'Requerido' })}>
-              <option value="">Seleccionar…</option>
-              {suppliers.filter((s) => s.is_active).map((s) => (
-                <option key={s.id} value={s.id}>{s.razon_social}</option>
-              ))}
-            </select>
-            {errors.supplier_id && <p className="field-error">{errors.supplier_id.message}</p>}
-          </div>
+        <div className={`grid ${isRepositor ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>
+          {!isRepositor && (
+            <div>
+              <label className="label-base">Proveedor</label>
+              <select className="input-base" {...register('supplier_id')}>
+                <option value="">Sin asignar</option>
+                {suppliers.filter((s) => s.is_active).map((s) => (
+                  <option key={s.id} value={s.id}>{s.razon_social}</option>
+                ))}
+              </select>
+            </div>
+          )}
           <div>
             <label className="label-base">Observaciones</label>
             <input className="input-base" placeholder="Urgente, entrega en turno…" {...register('notes')} />

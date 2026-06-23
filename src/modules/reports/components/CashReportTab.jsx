@@ -24,8 +24,10 @@ export function CashReportTab() {
   const search = async () => {
     setLoading(true)
     try {
-      const fromDt = new Date(from); fromDt.setHours(0, 0, 0, 0)
-      const toDt   = new Date(to);   toDt.setHours(23, 59, 59, 999)
+      const [fy, fm, fd] = from.split('-').map(Number)
+      const [ty, tm, td] = to.split('-').map(Number)
+      const fromDt = new Date(fy, fm - 1, fd, 0, 0, 0, 0)
+      const toDt   = new Date(ty, tm - 1, td, 23, 59, 59, 999)
       setSessions(await getCashReport({ from: fromDt.toISOString(), to: toDt.toISOString() }))
       setSearched(true)
     } catch { toast.error('Error al cargar sesiones') }

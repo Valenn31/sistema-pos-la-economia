@@ -30,6 +30,7 @@ export function ProductFormModal({ open, onClose, onSaved, product, categories }
         iva_included:    product.iva_included    ?? true,
         min_stock:       product.min_stock       ?? 0,
         has_expiry:      product.has_expiry      ?? false,
+        expiry_date:     product.expiry_date     ?? '',
         is_active:       product.is_active       ?? true,
       } : {
         unit_of_measure: 'unidad',
@@ -37,6 +38,7 @@ export function ProductFormModal({ open, onClose, onSaved, product, categories }
         iva_included: true,
         is_active: true,
         min_stock: 0,
+        expiry_date: '',
       })
     }
   }, [open, product, reset])
@@ -58,6 +60,7 @@ export function ProductFormModal({ open, onClose, onSaved, product, categories }
   }
 
   const ivaIncluded = watch('iva_included')
+  const hasExpiry   = watch('has_expiry')
 
   return (
     <Modal open={open} onClose={onClose} title={isEditing ? 'Editar producto' : 'Nuevo producto'} size="lg">
@@ -149,6 +152,16 @@ export function ProductFormModal({ open, onClose, onSaved, product, categories }
             </label>
           </div>
         </div>
+
+        {/* Fecha de vencimiento (visible si has_expiry) */}
+        {hasExpiry && (
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="label-base">Fecha de vencimiento</label>
+              <input type="date" className="input-base" {...register('expiry_date')} />
+            </div>
+          </div>
+        )}
 
         {/* Descripción */}
         <div>

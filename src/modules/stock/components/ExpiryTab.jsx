@@ -69,12 +69,12 @@ export function ExpiryTab() {
           <Calendar className="w-12 h-12 mx-auto mb-3 opacity-30" />
           <p>
             {rows.length === 0
-              ? 'No hay lotes con fecha de vencimiento registrada'
+              ? 'No hay productos con fecha de vencimiento registrada'
               : 'Sin registros para este filtro'}
           </p>
           {rows.length === 0 && (
             <p className="text-xs mt-2 text-surface-600">
-              Las fechas de vencimiento se registran al recibir mercadería en una Orden de Compra.
+              Podés cargar la fecha de vencimiento desde el formulario de producto o al recibir mercadería.
             </p>
           )}
         </div>
@@ -102,7 +102,7 @@ export function ExpiryTab() {
                         <p className="text-xs text-surface-500 font-mono">{row.products.sku}</p>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-center font-semibold text-white">{row.quantity}</td>
+                    <td className="px-4 py-3 text-center font-semibold text-white">{row.quantity ?? '—'}</td>
                     <td className="px-4 py-3 text-surface-300">
                       {new Date(row.expiry_date).toLocaleDateString('es-AR')}
                     </td>

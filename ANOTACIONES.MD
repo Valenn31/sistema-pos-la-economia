@@ -4,10 +4,10 @@
 
 ## 🛒 POS — Módulo de Ventas
 
-- Desplegable Cuenta Cliente debe aparece en el centro de la pantalla no en el lugar
 - que el target de sin existencias aparezca en el medio de lka pantalla
 - si hay menos plata en caja que la cobrada que aparezca alerta
-- QUE SI LA  VENTA ES DE UN CLIENTE AnoNIMO (VENTA ANONIMA) DIRECTAMENTE NO APAREZCA LA OPCION CUENTA CORRIENTE
+
+- VENTA POR DEPARTAMENTO (artículos departamentales): crear "departamentos" (ej: Fiambrería, Panadería, Almacén, Limpieza a granel) que funcionan como categorías comodín en el POS. El cajero selecciona el departamento y carga el monto a mano, sin buscar un producto del catálogo. Para productos fraccionados, a granel o re-envasados que no tienen código de barras ni ficha individual (fiambres cortados, lavandina en botellita, pan, etc.)
 
 ---
 
@@ -22,27 +22,22 @@
 
 ## 🏧 Cajero / Caja
 
-- que detecte las cajas del dia de la fecha para los reportes
 - AL CERRAR UNA CAJA QUE NO SEA OBLIGATORIO ABRIR UNA INSTANTANEAMENTE
 
 ---
 
 ## 🔄 Devoluciones
 
-- devolucion no tendira que agregar a stock automaticamente, sino preguntarlo (checkbox) y tambien que tenga en cuenta la devolucion de ese dinero para tenerlo en cuenta en caja.
-
 ---
 
 ## 🏪 Proveedores / Notas de Pedido
 
-- Que en modulo reposositor cuando voy a cargar nota de pedido no apar3zca la opciuon Proveedores
 - PROVEEDORES, AL HACER UNA NOTA DE COMPRA, EL DESPLEGABLE NO MUESTRA LOS PROVEEDORES
 
 ---
 
 ## 📦 Productos / Inventario
 
-- NO DEJA COLOCAR LA FECHA DE VENCIMIENTO DEL PRODUCTO SI EL CHECKBOX ESTA ACTIVADO
 - PODER BORRAR PRODUCTOS
 
 ---
@@ -73,3 +68,9 @@
 - ✅ AL COLOCARLE EL IVA, SE LO RESTA Y SE LO SUMA PERO EL FINAL DE LA CUENTA DA BIEN (CREO) ASI Q ARREGLAR EL TEMA VISUAL
 - ✅ AL CAMBIAR DE CAJERO CON PIN NO CAMBIA DEL TODO, SI SALGO DEL POS Y ENTRO VUEKLVE EL QUE ESTABA ANTES, SACAR AL PINGO ESO (se eliminó la función de cambio de cajero por PIN)
 - ✅ TODOS LOS SLOTS PARA COLOCAR UN NUMERO QUE TIENE LA FLECHA DE INCREMENTAR Y DECREMENTAR, NO LO HACEN DE A 1 SINO 0.001
+- ✅ NO DEJA COLOCAR LA FECHA DE VENCIMIENTO DEL PRODUCTO SI EL CHECKBOX ESTA ACTIVADO
+- ✅ MOSTRAR EL STOCK EN LA TABLA EL SOTCK QUE TIENE EL PRODUCTO Y MOSTRAR LA FECHA DE VENCIMIENTO + FILTRADO POR COLUMNAS
+- ✅ Alerta de vencimientos en dashboard (KPI + listado de productos por vencer)
+- ✅ que detecte las cajas del dia de la fecha para los reportes (bug de timezone: el último día del rango no aparecía)
+- ✅ devolucion no tendria que agregar a stock automaticamente, sino preguntarlo (checkbox) + que tenga en cuenta la devolucion de ese dinero en caja
+- ✅ Que en modulo repositor cuando voy a cargar nota de pedido no aparezca la opción Proveedores (campo oculto para repositor, supplier_id ahora opcional)
