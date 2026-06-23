@@ -18,7 +18,7 @@ export function Cart({ onCheckout }) {
     items, customer, globalDiscount,
     addItem, updateQuantity, removeItem, applyItemDiscount,
     setCustomer, setGlobalDiscount, clearCart,
-    getSubtotal, getTotal, getDiscountTotal, getIvaTotal,
+    getSubtotal, getTotal, getDiscountTotal, getIvaTotal, getIvaExtra,
   } = useCartStore()
 
   const [editGlobalDisc, setEditGlobalDisc] = useState(false)
@@ -27,8 +27,10 @@ export function Cart({ onCheckout }) {
   const subtotal       = getSubtotal()
   const discountTotal  = getDiscountTotal()
   const ivaTotal       = getIvaTotal()
+  const ivaExtra       = getIvaExtra()
   const total          = getTotal()
   const isEmpty        = items.length === 0
+  const gross          = items.reduce((s, i) => s + i.quantity * i.unitPrice, 0)
 
   const applyGlobalDiscount = () => {
     const v = parseFloat(discInput)
@@ -124,7 +126,7 @@ export function Cart({ onCheckout }) {
           <div className="space-y-1.5 text-sm">
             <div className="flex justify-between text-surface-400">
               <span>Subtotal</span>
-              <span>{formatCurrency(subtotal + discountTotal)}</span>
+              <span>{formatCurrency(gross)}</span>
             </div>
             {discountTotal > 0 && (
               <div className="flex justify-between text-green-400">
@@ -132,10 +134,16 @@ export function Cart({ onCheckout }) {
                 <span>− {formatCurrency(discountTotal)}</span>
               </div>
             )}
-            {ivaTotal > 0 && (
+            {ivaExtra > 0 && (
+              <div className="flex justify-between text-surface-400">
+                <span>+ IVA</span>
+                <span>{formatCurrency(ivaExtra)}</span>
+              </div>
+            )}
+            {ivaTotal > 0 && ivaTotal !== ivaExtra && (
               <div className="flex justify-between text-surface-500 text-xs">
-                <span>IVA (incluido)</span>
-                <span>{formatCurrency(ivaTotal)}</span>
+                <span>IVA incluido</span>
+                <span>{formatCurrency(ivaTotal - ivaExtra)}</span>
               </div>
             )}
             <div className="flex justify-between font-bold text-lg pt-2 border-t border-surface-700">

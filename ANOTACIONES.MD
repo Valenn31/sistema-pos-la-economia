@@ -5,12 +5,9 @@
 ## 🛒 POS — Módulo de Ventas
 
 - Desplegable Cuenta Cliente debe aparece en el centro de la pantalla no en el lugar
-- AL COLOCARLE EL IVA, SE LO RESTA Y SE LO SUMA PERO EL FINAL DE LA CUENTA DA BIEN (CREO) ASI Q ARREGLAR EL TEMA VISUAL
 - que el target de sin existencias aparezca en el medio de lka pantalla
 - si hay menos plata en caja que la cobrada que aparezca alerta
 - QUE SI LA  VENTA ES DE UN CLIENTE AnoNIMO (VENTA ANONIMA) DIRECTAMENTE NO APAREZCA LA OPCION CUENTA CORRIENTE
-- ✅ ###Byscador de productos en modulo ventas no aparece por codigo de barras (EAN)
-- ✅ ####Si eñ producto no tiene stock que aparezca a la hora de escanearlo en el POS
 
 ---
 
@@ -20,8 +17,7 @@
 - PODER COBRAR CUENTA CORRIENTE DESDE EL SECTOR DE BUSQQUEDA DE CLIENTES
 - GUARDAR VENTA DENTRO DEL CLIENTE CUANDO ANOTE EN ECUENTA CORRIENTE, AGREGAR FICHA DE RESUMEN DE CUENTA EN CADA CLIENTE CON SUS MOVIMIENTOS, CON ID DE COMPRA. DE DEUEDA Y PAGOS
 - QUE SE PUEDA IMPRIMIR HISTORIAL DE DEUDA DE CLIENTE
-- ✅ HACER QUE EL CLIENTE PUEDA SALDAR LA DEUDA
-
+- HACER QUE EL CLIENTE PUEDA SALDAR LA DEUDA
 ---
 
 ## 🏧 Cajero / Caja
@@ -69,3 +65,11 @@
 ## ⚙️ General / UI
 
 - PONER MODO OSCURO Y CLARO PARA LA INTERFAZ
+
+---
+
+## ✅ Tareas completadas
+
+- ✅ Byscador de productos en modulo ventas no aparece por codigo de barras (EAN)
+- ✅ Si eñ producto no tiene stock que aparezca a la hora de escanearlo en el POS
+- ✅ AL COLOCARLE EL IVA, SE LO RESTA Y SE LO SUMA PERO EL FINAL DE LA CUENTA DA BIEN (CREO) ASI Q ARREGLAR EL TEMA VISUAL

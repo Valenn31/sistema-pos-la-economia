@@ -149,6 +149,18 @@ export const useCartStore = create((set, get) => ({
     )
   },
 
+  getIvaExtra: () => {
+    const { items, customer, globalDiscount } = get()
+    const custDisc = customer?.discount_percent ?? 0
+    return round2(
+      items.reduce((sum, i) => {
+        if (i.ivaRate === 0 || i.ivaIncluded) return sum
+        const gross = i.subtotal * (1 - custDisc / 100) * (1 - globalDiscount / 100)
+        return sum + gross * i.ivaRate / 100
+      }, 0)
+    )
+  },
+
   getTotal: () => {
     const { items, customer, globalDiscount } = get()
     const custDisc = customer?.discount_percent ?? 0
@@ -165,6 +177,6 @@ export const useCartStore = create((set, get) => ({
   getDiscountTotal: () => {
     const { items } = get()
     const gross = items.reduce((s, i) => s + i.quantity * i.unitPrice, 0)
-    return round2(gross - get().getTotal())
+    return round2(gross - get().getTotal() + get().getIvaExtra())
   },
 }))
