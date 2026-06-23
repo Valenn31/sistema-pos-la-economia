@@ -75,7 +75,7 @@ export function TransferModal({ open, onClose, onSaved, product, locations, stoc
           <div>
             <label className="label-base">Cantidad *</label>
             <input
-              type="number" min="0.001" step="0.001"
+              type="number" min="0" step="any"
               className="input-base"
               placeholder="0"
               {...register('quantity', { required: 'Requerido', min: { value: 0.001, message: 'Mayor a 0' } })}

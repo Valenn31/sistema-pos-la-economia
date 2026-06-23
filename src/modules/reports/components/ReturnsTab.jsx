@@ -249,7 +249,7 @@ export function ReturnsTab() {
                         ) : (
                           <input
                             type="number"
-                            min="0.001"
+                            min="0"
                             max={maxReturnable}
                             step="1"
                             value={sel.qty}

@@ -128,7 +128,7 @@ export function DiscountFormModal({ open, onClose, onSave, initialData }) {
               {selectedType === 'fixed_total' ? 'Monto a descontar ($)' : 'Descuento (%)'}
               <span className="text-red-400"> *</span>
             </label>
-            <input type="number" min="0" step="0.01" className="input-base"
+            <input type="number" min="0" step="any" className="input-base"
               placeholder={selectedType === 'fixed_total' ? '500' : '10'}
               {...register('value', {
                 required: 'Requerido',

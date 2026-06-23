@@ -86,7 +86,7 @@ export function CashSessionModal({ mode = 'open', registers = [], session, total
                   <input
                     type="number"
                     min="0"
-                    step="0.01"
+                    step="any"
                     placeholder="0.00"
                     autoFocus
                     className="input-base pl-9"
@@ -133,7 +133,7 @@ export function CashSessionModal({ mode = 'open', registers = [], session, total
                 <input
                   type="number"
                   min="0"
-                  step="0.01"
+                  step="any"
                   placeholder="0.00"
                   autoFocus
                   className="input-base"

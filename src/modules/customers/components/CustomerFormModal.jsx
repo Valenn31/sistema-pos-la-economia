@@ -101,13 +101,13 @@ export function CustomerFormModal({ open, onClose, onSave, initialData }) {
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="label-base">Límite de crédito ($)</label>
-            <input type="number" min="0" step="0.01" className="input-base"
+            <input type="number" min="0" step="any" className="input-base"
               {...register('credit_limit', { min: { value: 0, message: '≥ 0' } })} />
             {errors.credit_limit && <p className="field-error">{errors.credit_limit.message}</p>}
           </div>
           <div>
             <label className="label-base">Descuento especial (%)</label>
-            <input type="number" min="0" max="100" step="0.1" className="input-base"
+            <input type="number" min="0" max="100" step="any" className="input-base"
               {...register('discount_percent', {
                 min: { value: 0,   message: '≥ 0'   },
                 max: { value: 100, message: '≤ 100' },

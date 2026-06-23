@@ -62,7 +62,7 @@ export function AdjustmentModal({ open, onClose, onSaved, product, locations, st
           <div>
             <label className="label-base">Cantidad a agregar / restar *</label>
             <input
-              type="number" step="0.001"
+              type="number" step="any"
               className="input-base"
               placeholder="Ej: +10 o -3"
               {...register('quantity', { required: 'Requerido', validate: (v) => v !== '0' || 'Debe ser distinto de 0' })}

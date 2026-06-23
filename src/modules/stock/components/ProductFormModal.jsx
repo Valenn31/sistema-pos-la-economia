@@ -103,11 +103,11 @@ export function ProductFormModal({ open, onClose, onSaved, product, categories }
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="label-base">Precio costo ($)</label>
-            <input type="number" min="0" step="0.01" className="input-base" placeholder="0.00" {...register('price_cost')} />
+            <input type="number" min="0" step="any" className="input-base" placeholder="0.00" {...register('price_cost')} />
           </div>
           <div>
             <label className="label-base">Precio venta ($) *</label>
-            <input type="number" min="0" step="0.01" className="input-base" placeholder="0.00" {...register('price_sell', { required: 'Requerido' })} />
+            <input type="number" min="0" step="any" className="input-base" placeholder="0.00" {...register('price_sell', { required: 'Requerido' })} />
             {errors.price_sell && <p className="field-error">{errors.price_sell.message}</p>}
           </div>
         </div>
@@ -134,7 +134,7 @@ export function ProductFormModal({ open, onClose, onSaved, product, categories }
         <div className="grid grid-cols-3 gap-3">
           <div>
             <label className="label-base">Stock mínimo</label>
-            <input type="number" min="0" step="0.001" className="input-base" placeholder="0" {...register('min_stock')} />
+            <input type="number" min="0" step="any" className="input-base" placeholder="0" {...register('min_stock')} />
           </div>
           <div className="flex items-end pb-1">
             <label className="flex items-center gap-2 cursor-pointer">

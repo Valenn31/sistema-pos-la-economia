@@ -129,13 +129,13 @@ export function PurchaseOrderFormModal({ open, onClose, onSaved, fromNote, suppl
                     ))}
                   </select>
                   <input
-                    type="number" min="0.001" step="0.001"
+                    type="number" min="0" step="any"
                     className="input-base"
                     placeholder="Cant."
                     {...register(`items.${idx}.quantity_ordered`, { required: true })}
                   />
                   <input
-                    type="number" min="0" step="0.01"
+                    type="number" min="0" step="any"
                     className="input-base"
                     placeholder="$"
                     {...register(`items.${idx}.unit_price`, { required: 'Req.' })}

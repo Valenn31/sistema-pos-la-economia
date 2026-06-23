@@ -159,7 +159,7 @@ export function PaymentModal({ session, cashier, onSuccess, onClose }) {
                   type="number"
                   autoFocus
                   min="0"
-                  step="0.01"
+                  step="any"
                   value={methodAmount}
                   onChange={(e) => setMethodAmt(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && addPayment()}

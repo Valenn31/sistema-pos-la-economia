@@ -124,13 +124,13 @@ export function PurchaseNoteFormModal({ open, onClose, onSaved, note, suppliers 
                   ))}
                 </select>
                 <input
-                  type="number" min="0.001" step="0.001"
+                  type="number" min="0" step="any"
                   className="input-base w-24"
                   placeholder="Cant."
                   {...register(`items.${idx}.quantity_requested`, { required: true, min: 0.001 })}
                 />
                 <input
-                  type="number" min="0" step="0.01"
+                  type="number" min="0" step="any"
                   className="input-base w-28"
                   placeholder="Precio u."
                   {...register(`items.${idx}.unit_price`)}

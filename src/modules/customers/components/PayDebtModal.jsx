@@ -63,7 +63,7 @@ export function PayDebtModal({ open, onClose, onSave, customer }) {
           <div>
             <label className="label-base">Monto a abonar ($) <span className="text-red-400">*</span></label>
             <input
-              type="number" min="0.01" step="0.01"
+              type="number" min="0" step="any"
               className="input-base text-lg"
               placeholder="0.00"
               {...register('amount', {

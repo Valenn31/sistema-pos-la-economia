@@ -107,7 +107,7 @@ export function ReceiveOrderModal({ open, onClose, onSaved, orderId }) {
                   <input
                     type="number"
                     min="0"
-                    step="0.001"
+                    step="any"
                     value={quantities[item.id] ?? ''}
                     onChange={(e) => setQuantities((prev) => ({ ...prev, [item.id]: e.target.value }))}
                     className="input-base text-center py-1"
