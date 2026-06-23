@@ -7,7 +7,6 @@
  *  3. Si hay sesión → muestra el POS completo (ProductSearch + Cart).
  *  4. El cajero puede:
  *     - Agregar productos al carrito y cobrar (PaymentModal)
- *     - Cambiar de cajero con PIN (PinSwitchModal) sin cerrar caja
  *     - Cerrar el turno (CashSessionModal mode='close')
  */
 import { useState, useEffect } from 'react'
@@ -24,7 +23,6 @@ import { CashSessionModal } from './CashSessionModal'
 import { ProductSearch }    from './ProductSearch'
 import { Cart }             from './Cart'
 import { PaymentModal }     from './PaymentModal'
-import { PinSwitchModal }   from './PinSwitchModal'
 import { SaleSuccessModal } from './SaleSuccessModal'
 import { Spinner }          from '@/shared/components/Spinner'
 import { Button }           from '@/shared/components/Button'
@@ -35,11 +33,8 @@ export function POSPage() {
   const { profile } = useAuthStore()
   const { session, registers, loading, openSession, closeSession, refresh } = useCashSession()
 
-  // El cajero "activo" puede diferir del usuario logueado (PIN switch)
-  const [activeCashier,   setActiveCashier]   = useState(null)
   const [showCloseModal,  setShowCloseModal]   = useState(false)
   const [showPayment,     setShowPayment]      = useState(false)
-  const [showPinSwitch,   setShowPinSwitch]    = useState(false)
   const [lastSale,        setLastSale]         = useState(null)
   const [sessionTotals,   setSessionTotals]    = useState(null)
 
@@ -51,8 +46,8 @@ export function POSPage() {
     getActiveDiscounts().then(setDiscounts).catch(() => {})
   }, [setDiscounts])
 
-  // Cajero efectivo: el del PIN switch o el perfil logueado
-  const cashier = activeCashier ?? profile
+  // Cajero efectivo: el perfil logueado
+  const cashier = profile
 
   // ── Handlers ──────────────────────────────────────────────────────
 
@@ -143,14 +138,6 @@ export function POSPage() {
         {/* Acciones */}
         <div className="flex items-center gap-2">
           <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowPinSwitch(true)}
-            className="hidden sm:flex text-surface-400"
-          >
-            Cambiar cajero
-          </Button>
-          <Button
             variant="secondary"
             size="sm"
             onClick={handleRequestClose}
@@ -183,13 +170,6 @@ export function POSPage() {
           cashier={cashier}
           onSuccess={handleSaleSuccess}
           onClose={() => setShowPayment(false)}
-        />
-      )}
-
-      {showPinSwitch && (
-        <PinSwitchModal
-          onSwitch={(result) => setActiveCashier(result.profile)}
-          onClose={() => setShowPinSwitch(false)}
         />
       )}
 

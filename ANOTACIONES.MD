@@ -22,7 +22,6 @@
 
 ## 🏧 Cajero / Caja
 
-- AL CAMBIAR DE CAJERO CON PIN NO CAMBIA DEL TODO, SI SALGO DEL POS Y ENTRO VUEKLVE EL QUE ESTABA ANTES, SACAR AL PINGO ESO
 - que detecte las cajas del dia de la fecha para los reportes
 - AL CERRAR UNA CAJA QUE NO SEA OBLIGATORIO ABRIR UNA INSTANTANEAMENTE
 
@@ -73,3 +72,4 @@
 - ✅ Byscador de productos en modulo ventas no aparece por codigo de barras (EAN)
 - ✅ Si eñ producto no tiene stock que aparezca a la hora de escanearlo en el POS
 - ✅ AL COLOCARLE EL IVA, SE LO RESTA Y SE LO SUMA PERO EL FINAL DE LA CUENTA DA BIEN (CREO) ASI Q ARREGLAR EL TEMA VISUAL
+- ✅ AL CAMBIAR DE CAJERO CON PIN NO CAMBIA DEL TODO, SI SALGO DEL POS Y ENTRO VUEKLVE EL QUE ESTABA ANTES, SACAR AL PINGO ESO (se eliminó la función de cambio de cajero por PIN)

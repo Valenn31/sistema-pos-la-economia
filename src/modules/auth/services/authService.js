@@ -7,7 +7,6 @@
  *  - getSessionData(userId)        → { profile, roles }
  *  - checkSetupCompleted()         → boolean
  *  - createFirstSuperadmin(data)   → { user, profile } | error
- *  - verifyPin(pin)                → { profile, roles } | null
  */
 import { supabase } from '@/supabase/client'
 
@@ -118,29 +117,4 @@ export async function createFirstSuperadmin({ fullName, email, password, pin, bu
   if (rpcError) throw rpcError
 
   return { user: authData.user }
-}
-
-/**
- * Verifica un PIN numérico de 4 dígitos para cambio rápido de cajero en POS.
- * @param {string} pin - 4 dígitos
- * @returns {{ profile, roles } | null} null si el PIN no corresponde a ningún usuario activo
- */
-export async function verifyPin(pin) {
-  const { data: profiles, error } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('pin', pin)
-    .eq('is_active', true)
-
-  if (error || !profiles || profiles.length === 0) return null
-
-  // Si hay más de un usuario con el mismo PIN (no debería), tomamos el primero
-  const profile = profiles[0]
-  const { data: userRoles } = await supabase
-    .from('user_roles')
-    .select('roles(name)')
-    .eq('user_id', profile.id)
-
-  const roles = (userRoles ?? []).map((r) => r.roles.name)
-  return { profile, roles }
 }
