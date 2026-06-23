@@ -1,0 +1,64 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-surface-200;
+  }
+
+  body {
+    @apply bg-surface-950 text-surface-100 font-sans antialiased;
+  }
+
+  /* Scrollbar personalizado */
+  ::-webkit-scrollbar {
+    @apply w-1.5 h-1.5;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-surface-900;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-surface-600 rounded-full;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-surface-500;
+  }
+}
+
+@layer components {
+  /* Clases reutilizables de layout */
+  .page-container {
+    @apply p-4 md:p-6 lg:p-8 max-w-screen-2xl mx-auto;
+  }
+
+  .card {
+    @apply bg-surface-900 border border-surface-800 rounded-xl p-4 md:p-6;
+  }
+
+  .input-base {
+    @apply w-full bg-surface-800 border border-surface-700 rounded-lg px-3 py-2
+           text-surface-100 placeholder-surface-500
+           focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent
+           transition-colors duration-150;
+  }
+
+  .label-base {
+    @apply block text-sm font-medium text-surface-300 mb-1;
+  }
+
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .field-error {
+    @apply text-red-400 text-xs mt-1;
+  }
+
+  .checkbox-base {
+    @apply w-4 h-4 rounded border-surface-600 bg-surface-800 text-primary-600
+           focus:ring-primary-500 focus:ring-offset-surface-900 cursor-pointer;
+  }
+}

@@ -1,0 +1,203 @@
+/**
+ * adminService.js — Gestión de usuarios, roles y configuración de la app.
+ */
+import { supabase } from '@/supabase/client'
+import { adminSupabase } from '@/supabase/adminClient'
+
+// ── Usuarios ──────────────────────────────────────────────────────────
+
+export async function getUsers() {
+  const { data: profiles, error: profErr } = await supabase
+    .from('profiles')
+    .select('*')
+    .order('full_name')
+  if (profErr) throw profErr
+
+  const { data: userRoles, error: rolesErr } = await supabase
+    .from('user_roles')
+    .select('user_id, roles(id, name)')
+  if (rolesErr) throw rolesErr
+
+  const rolesByUser = {}
+  for (const ur of userRoles) {
+    if (!rolesByUser[ur.user_id]) rolesByUser[ur.user_id] = []
+    if (ur.roles) rolesByUser[ur.user_id].push(ur.roles)
+  }
+
+  return profiles.map((p) => ({ ...p, roles: rolesByUser[p.id] ?? [] }))
+}
+
+export async function getRoles() {
+  const { data, error } = await supabase.from('roles').select('*').order('id')
+  if (error) throw error
+  return data
+}
+
+/**
+ * Crea un usuario en Supabase Auth + perfil + roles.
+ * Requiere adminSupabase (service role key configurada en .env).
+ */
+export async function createUser({ email, password, fullName, pin, roleIds }) {
+  if (!adminSupabase) throw new Error('Service role key no configurada. Agregá VITE_SUPABASE_SERVICE_KEY al .env')
+
+  const { data: authData, error: authErr } = await adminSupabase.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+    user_metadata: { full_name: fullName },
+  })
+  if (authErr) throw authErr
+
+  const userId = authData.user.id
+
+  const { error: profErr } = await supabase.from('profiles').insert({
+    id: userId,
+    full_name: fullName,
+    pin: pin || null,
+    is_active: true,
+  })
+  if (profErr) throw profErr
+
+  if (roleIds?.length) {
+    const { error: rolesErr } = await supabase.from('user_roles').insert(
+      roleIds.map((rid) => ({ user_id: userId, role_id: rid }))
+    )
+    if (rolesErr) throw rolesErr
+  }
+
+  return userId
+}
+
+export async function updateUser(userId, { fullName, pin, roleIds, isActive }) {
+  const updates = {}
+  if (fullName !== undefined) updates.full_name = fullName
+  if (pin !== undefined) updates.pin = pin || null
+  if (isActive !== undefined) updates.is_active = isActive
+
+  if (Object.keys(updates).length) {
+    const { error } = await supabase.from('profiles').update(updates).eq('id', userId)
+    if (error) throw error
+  }
+
+  if (roleIds !== undefined) {
+    await supabase.from('user_roles').delete().eq('user_id', userId)
+    if (roleIds.length) {
+      const { error } = await supabase.from('user_roles').insert(
+        roleIds.map((rid) => ({ user_id: userId, role_id: rid }))
+      )
+      if (error) throw error
+    }
+  }
+}
+
+export async function toggleUserActive(userId, isActive) {
+  const { error } = await supabase
+    .from('profiles')
+    .update({ is_active: isActive })
+    .eq('id', userId)
+  if (error) throw error
+}
+
+// ── Configuración de la app ───────────────────────────────────────────
+
+export async function getSettings() {
+  const { data, error } = await supabase.from('app_settings').select('*')
+  if (error) throw error
+  const map = {}
+  for (const row of data) map[row.key] = row.value
+  return map
+}
+
+export async function saveSettings(settings) {
+  const entries = Object.entries(settings).map(([key, value]) => ({ key, value: value ?? '' }))
+  for (const entry of entries) {
+    const { error } = await supabase
+      .from('app_settings')
+      .upsert(entry, { onConflict: 'key' })
+    if (error) throw error
+  }
+}
+
+// ── Dashboard gráficos ────────────────────────────────────────────────
+
+/** Ventas de los últimos 7 días agrupadas por día. */
+export async function getWeeklySales() {
+  const dates = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date()
+    d.setHours(0, 0, 0, 0)
+    d.setDate(d.getDate() - (6 - i))
+    return d
+  })
+
+  const { data, error } = await supabase
+    .from('sales')
+    .select('created_at, total')
+    .gte('created_at', dates[0].toISOString())
+    .eq('status', 'completed')
+  if (error) throw error
+
+  const byDay = {}
+  for (const d of dates) byDay[d.toISOString().slice(0, 10)] = { ventas: 0, total: 0 }
+  for (const sale of data ?? []) {
+    const key = new Date(sale.created_at).toISOString().slice(0, 10)
+    if (byDay[key]) { byDay[key].ventas++; byDay[key].total += Number(sale.total) }
+  }
+
+  return dates.map((d) => ({
+    fecha: d.toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric' }),
+    ...byDay[d.toISOString().slice(0, 10)],
+  }))
+}
+
+// ── Dashboard KPIs ────────────────────────────────────────────────────
+
+export async function getDashboardStats() {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const todayIso = today.toISOString()
+
+  const [salesRes, stockRes, customersRes, sessionsRes] = await Promise.all([
+    supabase
+      .from('sales')
+      .select('id, total, created_at')
+      .gte('created_at', todayIso)
+      .eq('status', 'completed'),
+    supabase
+      .from('stock')
+      .select('product_id, quantity, products!inner(min_stock, name, is_active)')
+      .eq('products.is_active', true),
+    supabase
+      .from('customers')
+      .select('id, full_name, current_balance, credit_limit')
+      .gt('current_balance', 0)
+      .eq('is_active', true),
+    supabase
+      .from('cash_sessions')
+      .select('id, register_id, opened_at, status, cash_registers(name)')
+      .eq('status', 'open'),
+  ])
+
+  const todaySales = salesRes.data ?? []
+  const totalHoy   = todaySales.reduce((s, v) => s + v.total, 0)
+
+  // Stock agrupado por producto (suma de ubicaciones)
+  const stockByProduct = {}
+  for (const row of (stockRes.data ?? [])) {
+    if (!stockByProduct[row.product_id]) {
+      stockByProduct[row.product_id] = { qty: 0, minStock: row.products.min_stock, name: row.products.name }
+    }
+    stockByProduct[row.product_id].qty += row.quantity
+  }
+  const lowStockProducts = Object.values(stockByProduct)
+    .filter((p) => p.minStock > 0 && p.qty <= p.minStock)
+
+  return {
+    ventasHoy:       todaySales.length,
+    totalHoy,
+    lowStockCount:   lowStockProducts.length,
+    lowStockItems:   lowStockProducts.slice(0, 5),
+    customersDebt:   (customersRes.data ?? []).length,
+    topDebtors:      (customersRes.data ?? []).slice(0, 5),
+    activeSessions:  sessionsRes.data ?? [],
+  }
+}
