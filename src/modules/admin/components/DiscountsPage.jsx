@@ -1,6 +1,8 @@
 /**
- * DiscountsPage — ABM de reglas de descuento.
+ * DiscountsPage — ABM (Alta/Baja/Modificación) de reglas de descuento.
  * Accesible para admin y superadmin desde /admin/discounts.
+ * Permite crear, editar, activar/desactivar y eliminar descuentos
+ * que se aplican automáticamente en el POS durante las ventas.
  */
 import { useState, useEffect, useCallback } from 'react'
 import { Plus, Pencil, Trash2, ToggleLeft, ToggleRight, Tag } from 'lucide-react'
@@ -15,6 +17,7 @@ import {
   toggleDiscountActive, deleteDiscount,
 } from '../services/discountService'
 
+/** Etiquetas legibles para cada tipo de descuento */
 const TYPE_LABELS = {
   product:          'Producto',
   category:         'Categoría',
@@ -23,6 +26,7 @@ const TYPE_LABELS = {
   fixed_total:      'Monto fijo',
 }
 
+/** Colores de badge asociados a cada tipo de descuento */
 const TYPE_COLORS = {
   product:          'blue',
   category:         'purple',
@@ -31,6 +35,13 @@ const TYPE_COLORS = {
   fixed_total:      'yellow',
 }
 
+/**
+ * Genera una descripción legible de la regla de descuento.
+ * Por ejemplo: "10% off — Coca Cola" o "Comprá 3 llevá 4 — Galletitas".
+ *
+ * @param {object} d - Objeto de descuento con sus relaciones (products, categories)
+ * @returns {string} Descripción textual del descuento
+ */
 function describeDiscount(d) {
   switch (d.type) {
     case 'product':          return `${d.value}% off — ${d.products?.name ?? '—'}`
@@ -42,13 +53,23 @@ function describeDiscount(d) {
   }
 }
 
+/**
+ * DiscountsPage — Componente principal de la página de gestión de descuentos.
+ * Renderiza la tabla con todas las reglas, permite CRUD completo y toggle de estado.
+ */
 export function DiscountsPage() {
+  // Lista de descuentos cargados desde la base de datos
   const [discounts,     setDiscounts]     = useState([])
+  // Indicador de carga inicial
   const [loading,       setLoading]       = useState(true)
+  // Controla la visibilidad del modal de formulario (crear/editar)
   const [formOpen,      setFormOpen]      = useState(false)
+  // Descuento actualmente en edición (null = modo creación)
   const [editing,       setEditing]       = useState(null)
+  // Descuento seleccionado para eliminar (abre el diálogo de confirmación)
   const [deleteTarget,  setDeleteTarget]  = useState(null)
 
+  /** Carga todos los descuentos desde el servicio */
   const load = useCallback(async () => {
     try {
       setDiscounts(await getDiscounts())
@@ -56,8 +77,10 @@ export function DiscountsPage() {
     finally { setLoading(false) }
   }, [])
 
+  // Cargar descuentos al montar el componente
   useEffect(() => { load() }, [load])
 
+  /** Guarda un descuento (creación o actualización) y recarga la lista */
   const handleSave = async (data) => {
     try {
       if (editing) {
@@ -73,6 +96,7 @@ export function DiscountsPage() {
     } catch (e) { toast.error(e.message ?? 'Error al guardar') }
   }
 
+  /** Alterna el estado activo/inactivo de un descuento */
   const handleToggle = async (d) => {
     try {
       await toggleDiscountActive(d.id, !d.is_active)
@@ -81,6 +105,7 @@ export function DiscountsPage() {
     } catch { toast.error('Error al cambiar estado') }
   }
 
+  /** Elimina el descuento seleccionado y recarga la lista */
   const handleDelete = async () => {
     try {
       await deleteDiscount(deleteTarget.id)
@@ -90,11 +115,14 @@ export function DiscountsPage() {
     } catch { toast.error('Error al eliminar') }
   }
 
+  /** Abre el modal en modo creación */
   const openCreate = () => { setEditing(null); setFormOpen(true) }
+  /** Abre el modal en modo edición con los datos del descuento seleccionado */
   const openEdit   = (d) => { setEditing(d);   setFormOpen(true) }
 
   return (
     <div className="p-6 space-y-4">
+      {/* Encabezado con título e ícono + botón de nueva regla */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Tag className="w-6 h-6 text-primary-400" />
@@ -105,6 +133,7 @@ export function DiscountsPage() {
         </Button>
       </div>
 
+      {/* Contenido principal: spinner, estado vacío o tabla de descuentos */}
       {loading ? (
         <div className="flex justify-center py-16"><Spinner /></div>
       ) : discounts.length === 0 ? (
@@ -128,13 +157,17 @@ export function DiscountsPage() {
             <tbody className="divide-y divide-surface-800">
               {discounts.map((d) => (
                 <tr key={d.id} className={`hover:bg-surface-800/40 transition-colors ${!d.is_active ? 'opacity-50' : ''}`}>
+                  {/* Nombre del descuento */}
                   <td className="px-4 py-3 font-medium text-white">{d.name}</td>
+                  {/* Badge de tipo con color distintivo */}
                   <td className="px-4 py-3">
                     <Badge color={TYPE_COLORS[d.type] ?? 'gray'}>
                       {TYPE_LABELS[d.type] ?? d.type}
                     </Badge>
                   </td>
+                  {/* Descripción generada automáticamente */}
                   <td className="px-4 py-3 text-surface-400">{describeDiscount(d)}</td>
+                  {/* Botón toggle para activar/desactivar */}
                   <td className="px-4 py-3 text-center">
                     <button onClick={() => handleToggle(d)} className="text-surface-400 hover:text-primary-400 transition-colors" title={d.is_active ? 'Desactivar' : 'Activar'}>
                       {d.is_active
@@ -143,6 +176,7 @@ export function DiscountsPage() {
                       }
                     </button>
                   </td>
+                  {/* Botones de editar y eliminar */}
                   <td className="px-4 py-3">
                     <div className="flex justify-end gap-2">
                       <button onClick={() => openEdit(d)} className="p-1.5 rounded-lg text-surface-400 hover:text-white hover:bg-surface-700 transition-colors" title="Editar">
@@ -160,6 +194,7 @@ export function DiscountsPage() {
         </div>
       )}
 
+      {/* Modal de formulario para crear/editar descuentos */}
       <DiscountFormModal
         open={formOpen}
         onClose={() => { setFormOpen(false); setEditing(null) }}
@@ -167,6 +202,7 @@ export function DiscountsPage() {
         initialData={editing}
       />
 
+      {/* Diálogo de confirmación para eliminar un descuento */}
       <ConfirmDialog
         open={!!deleteTarget}
         title="Eliminar descuento"

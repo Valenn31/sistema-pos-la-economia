@@ -1,13 +1,13 @@
 /**
  * SetupWizard — Panel de configuración inicial del sistema.
  * Se muestra la primera vez que se accede al sistema (setup_completed = false).
- * Guía al usuario para crear el primer Superadmin y configura datos básicos del negocio.
+ * Guía al usuario para crear el primer Superadmin y configurar datos básicos del negocio.
  *
- * Pasos:
- *  1. Bienvenida
- *  2. Datos del negocio (nombre, CUIT, dirección, condición fiscal)
- *  3. Crear cuenta Superadmin
- *  4. Confirmación
+ * Pasos del wizard:
+ *  1. Bienvenida — Introducción al proceso de configuración
+ *  2. Datos del negocio — Nombre, CUIT, dirección, condición fiscal, teléfono
+ *  3. Crear cuenta Superadmin — Email, contraseña, PIN y nombre completo
+ *  4. Confirmación — Todo listo, redirige al login
  */
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -17,20 +17,29 @@ import { ShoppingCart, Building2, UserCog, CheckCircle2, ArrowRight, ArrowLeft }
 import { createFirstSuperadmin } from '@/modules/auth/services/authService'
 import { Button } from '@/shared/components/Button'
 
+/** Nombres de los pasos para el indicador de progreso superior */
 const STEPS = ['Bienvenida', 'Negocio', 'Superadmin', 'Listo']
 
+/**
+ * SetupWizard — Componente orquestador del wizard de configuración inicial.
+ * Controla el paso actual y los datos del negocio que se pasan entre pasos.
+ */
 export function SetupWizard() {
+  // Paso actual del wizard (0-3)
   const [step, setStep] = useState(0)
+  // Datos del negocio capturados en el paso 2, pasados al paso 3
   const [businessData, setBusinessData] = useState(null)
   const navigate = useNavigate()
 
+  /** Avanza al siguiente paso del wizard */
   const next = () => setStep((s) => s + 1)
+  /** Retrocede al paso anterior del wizard */
   const prev = () => setStep((s) => s - 1)
 
   return (
     <div className="min-h-screen bg-surface-950 flex items-center justify-center p-4">
       <div className="w-full max-w-lg">
-        {/* Indicador de pasos */}
+        {/* Indicador visual de pasos (stepper) con círculos numerados y líneas conectoras */}
         <div className="flex items-center justify-center gap-2 mb-8">
           {STEPS.map((label, i) => (
             <div key={label} className="flex items-center gap-2">
@@ -40,6 +49,7 @@ export function SetupWizard() {
               `}>
                 {i < step ? <CheckCircle2 className="w-4 h-4" /> : i + 1}
               </div>
+              {/* Línea conectora entre pasos (excepto después del último) */}
               {i < STEPS.length - 1 && (
                 <div className={`w-8 h-0.5 ${i < step ? 'bg-primary-600' : 'bg-surface-800'}`} />
               )}
@@ -47,6 +57,7 @@ export function SetupWizard() {
           ))}
         </div>
 
+        {/* Contenedor principal que renderiza el componente del paso actual */}
         <div className="card">
           {step === 0 && <StepWelcome onNext={next} />}
           {step === 1 && <StepBusiness onNext={(data) => { setBusinessData(data); next() }} onPrev={prev} />}
@@ -59,6 +70,14 @@ export function SetupWizard() {
 }
 
 /* ─── Paso 1: Bienvenida ─────────────────────────────────────────── */
+
+/**
+ * StepWelcome — Paso introductorio del wizard.
+ * Muestra un mensaje de bienvenida y el botón para comenzar la configuración.
+ *
+ * @param {object} props
+ * @param {Function} props.onNext - Callback para avanzar al siguiente paso
+ */
 function StepWelcome({ onNext }) {
   return (
     <div className="text-center py-4">
@@ -79,11 +98,21 @@ function StepWelcome({ onNext }) {
 }
 
 /* ─── Paso 2: Datos del negocio ──────────────────────────────────── */
+
+/**
+ * StepBusiness — Formulario para capturar los datos fiscales del negocio.
+ * Los datos se pasan al paso siguiente para enviarse junto con la cuenta Superadmin.
+ *
+ * @param {object} props
+ * @param {Function} props.onNext - Callback que recibe los datos del formulario al avanzar
+ * @param {Function} props.onPrev - Callback para retroceder al paso anterior
+ */
 function StepBusiness({ onNext, onPrev }) {
   const { register, handleSubmit, formState: { errors } } = useForm()
 
   return (
     <div>
+      {/* Encabezado del paso con ícono */}
       <div className="flex items-center gap-3 mb-6">
         <div className="w-10 h-10 bg-primary-600/10 rounded-xl flex items-center justify-center">
           <Building2 className="w-5 h-5 text-primary-400" />
@@ -95,6 +124,7 @@ function StepBusiness({ onNext, onPrev }) {
       </div>
 
       <form onSubmit={handleSubmit(onNext)} className="space-y-4">
+        {/* Campo: Nombre o razón social del negocio (obligatorio) */}
         <div>
           <label className="label-base">Nombre / Razón Social *</label>
           <input className="input-base" placeholder="Supermercado La Economía"
@@ -102,6 +132,7 @@ function StepBusiness({ onNext, onPrev }) {
           {errors.business_name && <p className="text-red-400 text-xs mt-1">{errors.business_name.message}</p>}
         </div>
 
+        {/* Campos: CUIT y condición fiscal en grilla de 2 columnas */}
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="label-base">CUIT</label>
@@ -118,18 +149,21 @@ function StepBusiness({ onNext, onPrev }) {
           </div>
         </div>
 
+        {/* Campo: Dirección del negocio */}
         <div>
           <label className="label-base">Dirección</label>
           <input className="input-base" placeholder="Av. Principal 1234, Ciudad"
             {...register('address')} />
         </div>
 
+        {/* Campo: Teléfono del negocio */}
         <div>
           <label className="label-base">Teléfono</label>
           <input className="input-base" placeholder="0351 123-4567"
             {...register('phone')} />
         </div>
 
+        {/* Botones de navegación: Atrás y Siguiente */}
         <div className="flex gap-3 pt-2">
           <Button variant="secondary" onClick={onPrev} className="flex-1">
             <ArrowLeft className="w-4 h-4" /> Atrás
@@ -144,14 +178,28 @@ function StepBusiness({ onNext, onPrev }) {
 }
 
 /* ─── Paso 3: Crear Superadmin ───────────────────────────────────── */
+
+/**
+ * StepSuperadmin — Formulario para crear la cuenta del primer Superadmin.
+ * Envía los datos del negocio (del paso anterior) junto con los del usuario
+ * al RPC complete_initial_setup de Supabase.
+ *
+ * @param {object} props
+ * @param {object} props.businessData - Datos del negocio capturados en el paso anterior
+ * @param {Function} props.onNext - Callback para avanzar al paso de confirmación
+ * @param {Function} props.onPrev - Callback para retroceder al paso anterior
+ */
 function StepSuperadmin({ businessData, onNext, onPrev }) {
   const { register, handleSubmit, watch, formState: { errors, isSubmitting } } = useForm()
+  // Observar el campo password para validar que la confirmación coincida
   const password = watch('password')
 
+  /**
+   * Envía los datos al RPC de Supabase para completar el setup inicial.
+   * El RPC usa SECURITY DEFINER, no necesita sesión autenticada.
+   */
   const onSubmit = async (data) => {
     try {
-      // El RPC complete_initial_setup maneja toda la escritura en DB
-      // con SECURITY DEFINER, sin necesitar sesión autenticada
       await createFirstSuperadmin({
         fullName:     data.fullName,
         email:        data.email,
@@ -169,6 +217,7 @@ function StepSuperadmin({ businessData, onNext, onPrev }) {
 
   return (
     <div>
+      {/* Encabezado del paso con ícono */}
       <div className="flex items-center gap-3 mb-6">
         <div className="w-10 h-10 bg-primary-600/10 rounded-xl flex items-center justify-center">
           <UserCog className="w-5 h-5 text-primary-400" />
@@ -180,6 +229,7 @@ function StepSuperadmin({ businessData, onNext, onPrev }) {
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        {/* Campo: Nombre completo del superadmin */}
         <div>
           <label className="label-base">Nombre completo *</label>
           <input className="input-base" placeholder="Juan Pérez"
@@ -187,6 +237,7 @@ function StepSuperadmin({ businessData, onNext, onPrev }) {
           {errors.fullName && <p className="text-red-400 text-xs mt-1">{errors.fullName.message}</p>}
         </div>
 
+        {/* Campo: Email del superadmin */}
         <div>
           <label className="label-base">Email *</label>
           <input type="email" className="input-base" placeholder="admin@laeconomia.com"
@@ -194,6 +245,7 @@ function StepSuperadmin({ businessData, onNext, onPrev }) {
           {errors.email && <p className="text-red-400 text-xs mt-1">{errors.email.message}</p>}
         </div>
 
+        {/* Campos: Contraseña y confirmación en grilla de 2 columnas */}
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="label-base">Contraseña *</label>
@@ -212,6 +264,7 @@ function StepSuperadmin({ businessData, onNext, onPrev }) {
           </div>
         </div>
 
+        {/* Campo: PIN de 4 dígitos para cambio rápido de cajero */}
         <div>
           <label className="label-base">PIN de caja (4 dígitos) *</label>
           <input
@@ -229,6 +282,7 @@ function StepSuperadmin({ businessData, onNext, onPrev }) {
           <p className="text-surface-500 text-xs mt-1">Se usa para cambio rápido de cajero en el POS</p>
         </div>
 
+        {/* Botones de navegación: Atrás y Crear cuenta */}
         <div className="flex gap-3 pt-2">
           <Button variant="secondary" onClick={onPrev} className="flex-1" disabled={isSubmitting}>
             <ArrowLeft className="w-4 h-4" /> Atrás
@@ -243,6 +297,15 @@ function StepSuperadmin({ businessData, onNext, onPrev }) {
 }
 
 /* ─── Paso 4: Listo ──────────────────────────────────────────────── */
+
+/**
+ * StepDone — Paso final de confirmación.
+ * Indica que el setup se completó exitosamente y ofrece un botón
+ * para ir a la pantalla de login.
+ *
+ * @param {object} props
+ * @param {Function} props.onFinish - Callback para navegar al login
+ */
 function StepDone({ onFinish }) {
   return (
     <div className="text-center py-4">

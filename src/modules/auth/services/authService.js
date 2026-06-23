@@ -2,22 +2,30 @@
  * authService.js — Capa de acceso a Supabase para autenticación y perfiles.
  *
  * Funciones exportadas:
- *  - signIn(email, password)       → { user, profile, roles } | error
- *  - signOut()                     → void
- *  - getSessionData(userId)        → { profile, roles }
- *  - checkSetupCompleted()         → boolean
- *  - createFirstSuperadmin(data)   → { user, profile } | error
+ *  - signIn(email, password)       → Inicia sesión y retorna { user, profile, roles }
+ *  - signOut()                     → Cierra la sesión actual
+ *  - getSessionData(userId)        → Obtiene perfil y roles de un usuario
+ *  - checkSetupCompleted()         → Verifica si ya existe un superadmin configurado
+ *  - createFirstSuperadmin(data)   → Crea el primer superadmin durante el setup inicial
  */
 import { supabase } from '@/supabase/client'
 
 /**
- * Obtiene perfil y roles de un usuario dado su ID.
- * Usa queries separadas en lugar del join de PostgREST para mayor compatibilidad.
+ * Obtiene el perfil y los roles de un usuario dado su UUID.
+ * Usa queries separadas (en lugar del join de PostgREST) para mayor compatibilidad
+ * con diferentes configuraciones de claves foráneas.
+ *
+ * Pasos:
+ *  1. Consulta el perfil del usuario en la tabla `profiles`
+ *  2. Obtiene los IDs de roles asignados en `user_roles`
+ *  3. Resuelve los nombres de esos roles desde la tabla `roles`
+ *
  * @param {string} userId - UUID del usuario en auth.users
- * @returns {{ profile: object, roles: string[] }}
+ * @returns {Promise<{ profile: object, roles: string[] }>} Perfil completo y lista de nombres de roles
+ * @throws {Error} Si falla alguna consulta a Supabase
  */
 export async function getSessionData(userId) {
-  // 1. Obtener perfil
+  // 1. Obtener perfil del usuario
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('*')
@@ -52,9 +60,13 @@ export async function getSessionData(userId) {
 
 /**
  * Inicia sesión con email y contraseña.
- * @param {string} email
- * @param {string} password
- * @returns {{ user, profile, roles }}
+ * Tras autenticar exitosamente, obtiene los datos de sesión (perfil + roles).
+ *
+ * @param {string} email - Email del usuario
+ * @param {string} password - Contraseña del usuario
+ * @returns {Promise<{ user: object, profile: object, roles: string[] }>}
+ *   Objeto con el usuario de Supabase Auth, su perfil y sus roles
+ * @throws {Error} Si las credenciales son incorrectas o falla la consulta
  */
 export async function signIn(email, password) {
   const { data, error } = await supabase.auth.signInWithPassword({ email, password })
@@ -65,7 +77,11 @@ export async function signIn(email, password) {
 }
 
 /**
- * Cierra la sesión actual.
+ * Cierra la sesión actual de Supabase Auth.
+ * Elimina el token de sesión del almacenamiento local.
+ *
+ * @returns {Promise<void>}
+ * @throws {Error} Si falla el cierre de sesión
  */
 export async function signOut() {
   const { error } = await supabase.auth.signOut()
@@ -73,8 +89,11 @@ export async function signOut() {
 }
 
 /**
- * Verifica si el setup inicial ya fue completado (existe al menos un superadmin).
- * @returns {boolean}
+ * Verifica si el setup inicial ya fue completado.
+ * Consulta la clave 'setup_completed' en `app_settings`.
+ * Si no existe la clave o su valor no es 'true', retorna false.
+ *
+ * @returns {Promise<boolean>} true si ya se completó el setup inicial
  */
 export async function checkSetupCompleted() {
   const { data, error } = await supabase
@@ -92,8 +111,24 @@ export async function checkSetupCompleted() {
  * Usa una función RPC con SECURITY DEFINER para escribir en la DB
  * sin necesitar una sesión autenticada (el usuario aún no existe).
  *
- * @param {{ fullName, email, password, pin, businessData }} data
- * @returns {{ user }}
+ * Pasos:
+ *  1. Crea el usuario en Supabase Auth vía signUp (no requiere sesión previa)
+ *  2. Llama al RPC `complete_initial_setup` que inserta perfil, asigna rol superadmin
+ *     y guarda los datos del negocio en `app_settings`
+ *
+ * @param {object} data - Datos del superadmin y del negocio
+ * @param {string} data.fullName - Nombre completo del administrador
+ * @param {string} data.email - Email del administrador
+ * @param {string} data.password - Contraseña del administrador
+ * @param {string} data.pin - PIN numérico para acceso rápido
+ * @param {object} data.businessData - Datos del negocio
+ * @param {string} data.businessData.business_name - Nombre del comercio
+ * @param {string} [data.businessData.cuit] - CUIT del comercio
+ * @param {string} [data.businessData.fiscal_condition] - Condición fiscal (default: 'responsable_inscripto')
+ * @param {string} [data.businessData.address] - Dirección del comercio
+ * @param {string} [data.businessData.phone] - Teléfono del comercio
+ * @returns {Promise<{ user: object }>} Objeto con el usuario creado en Auth
+ * @throws {Error} Si el email ya está registrado o falla el RPC
  */
 export async function createFirstSuperadmin({ fullName, email, password, pin, businessData }) {
   // 1. Crear usuario en Supabase Auth (no requiere sesión)

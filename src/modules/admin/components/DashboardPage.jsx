@@ -1,5 +1,8 @@
 /**
  * DashboardPage — Panel principal con KPIs del día.
+ * Muestra ventas, recaudación, stock bajo, deudores, vencimientos
+ * y gráficos semanales de recaudación/ventas.
+ * Solo accesible para roles admin y superadmin.
  */
 import { useState, useEffect } from 'react'
 import { ShoppingCart, DollarSign, AlertTriangle, Users, RefreshCw, Store, Clock } from 'lucide-react'
@@ -11,7 +14,19 @@ import { Button }  from '@/shared/components/Button'
 import { getDashboardStats, getSettings, getWeeklySales } from '../services/adminService'
 import { formatCurrency } from '@/shared/utils/formatters'
 
+/**
+ * KpiCard — Tarjeta de indicador clave (KPI) reutilizable.
+ * Muestra un ícono, un valor destacado, una etiqueta descriptiva y un subtexto opcional.
+ *
+ * @param {object} props
+ * @param {import('lucide-react').LucideIcon} props.icon - Componente de ícono de Lucide a renderizar
+ * @param {string} props.label - Etiqueta descriptiva de la métrica (ej: "Ventas hoy")
+ * @param {string|number} props.value - Valor principal a mostrar destacado
+ * @param {string} [props.sub] - Subtexto explicativo debajo de la etiqueta
+ * @param {'primary'|'yellow'|'red'|'blue'} [props.color='primary'] - Esquema de color de la tarjeta
+ */
 function KpiCard({ icon: Icon, label, value, sub, color = 'primary' }) {
+  // Mapa de clases CSS por variante de color
   const colors = {
     primary: 'bg-primary-600/10 text-primary-400 border-primary-600/20',
     yellow:  'bg-yellow-600/10 text-yellow-400 border-yellow-600/20',
@@ -30,12 +45,25 @@ function KpiCard({ icon: Icon, label, value, sub, color = 'primary' }) {
   )
 }
 
+/**
+ * DashboardPage — Componente principal del dashboard administrativo.
+ * Carga en paralelo las estadísticas del día, la configuración del negocio
+ * y los datos de ventas semanales para renderizar KPIs y gráficos.
+ */
 export function DashboardPage() {
+  // Estadísticas generales del día (ventas, stock bajo, deudores, etc.)
   const [stats,      setStats]      = useState(null)
+  // Configuración del negocio (nombre, etc.)
   const [settings,   setSettings]   = useState({})
+  // Datos de ventas/recaudación de los últimos 7 días para gráficos
   const [weeklyData, setWeeklyData] = useState([])
+  // Indicador de carga mientras se obtienen los datos
   const [loading,    setLoading]    = useState(true)
 
+  /**
+   * Refresca todas las estadísticas del dashboard.
+   * Ejecuta las tres consultas en paralelo para mayor velocidad.
+   */
   const load = async () => {
     setLoading(true)
     try {
@@ -47,14 +75,16 @@ export function DashboardPage() {
     finally { setLoading(false) }
   }
 
+  // Cargar estadísticas, configuración y ventas semanales al montar el componente
   useEffect(() => { load() }, [])
 
+  // Mientras se cargan los datos, mostrar spinner centrado
   if (loading) return <div className="flex items-center justify-center h-full"><Spinner size="lg" /></div>
 
   return (
     <div className="h-full overflow-y-auto">
       <div className="p-6 max-w-5xl mx-auto space-y-6">
-        {/* Header */}
+        {/* Encabezado con nombre del negocio, fecha actual y botón de actualizar */}
         <div className="flex items-center justify-between">
           <div>
             <div className="flex items-center gap-2 mb-1">
@@ -65,12 +95,13 @@ export function DashboardPage() {
               {new Date().toLocaleDateString('es-AR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
             </p>
           </div>
+          {/* Botón para recargar manualmente las estadísticas */}
           <Button variant="ghost" size="sm" onClick={load}>
             <RefreshCw className="w-4 h-4" /> Actualizar
           </Button>
         </div>
 
-        {/* KPIs del día */}
+        {/* Grilla de KPIs del día: ventas, recaudación, stock bajo, deudores y vencimientos */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           <KpiCard
             icon={ShoppingCart}
@@ -107,7 +138,7 @@ export function DashboardPage() {
           />
         </div>
 
-        {/* Cajas activas */}
+        {/* Sección de cajas registradoras actualmente abiertas */}
         {stats.activeSessions.length > 0 && (
           <div className="card">
             <h2 className="text-sm font-semibold text-surface-400 uppercase tracking-wider mb-3">Cajas abiertas</h2>
@@ -121,9 +152,10 @@ export function DashboardPage() {
           </div>
         )}
 
-        {/* Gráficos semanales */}
+        {/* Gráficos semanales: recaudación (AreaChart) y cantidad de ventas (BarChart) */}
         {weeklyData.length > 0 && (
           <div className="grid md:grid-cols-2 gap-4">
+            {/* Gráfico de área: recaudación de los últimos 7 días */}
             <div className="card">
               <h2 className="text-sm font-semibold text-surface-400 uppercase tracking-wider mb-4">
                 Recaudado — últimos 7 días
@@ -149,6 +181,7 @@ export function DashboardPage() {
               </ResponsiveContainer>
             </div>
 
+            {/* Gráfico de barras: cantidad de ventas de los últimos 7 días */}
             <div className="card">
               <h2 className="text-sm font-semibold text-surface-400 uppercase tracking-wider mb-4">
                 Ventas — últimos 7 días
@@ -169,9 +202,9 @@ export function DashboardPage() {
           </div>
         )}
 
-        {/* Tres columnas: stock bajo + vencimientos + deudores */}
+        {/* Tres columnas informativas: stock bajo, vencimientos próximos y deudores */}
         <div className="grid md:grid-cols-3 gap-4">
-          {/* Stock bajo */}
+          {/* Listado de productos con stock por debajo del mínimo configurado */}
           <div className="card">
             <h2 className="text-sm font-semibold text-surface-400 uppercase tracking-wider mb-3">
               Productos bajo mínimo
@@ -190,7 +223,7 @@ export function DashboardPage() {
             )}
           </div>
 
-          {/* Vencimientos */}
+          {/* Listado de productos próximos a vencer o ya vencidos */}
           <div className="card">
             <h2 className="text-sm font-semibold text-surface-400 uppercase tracking-wider mb-3">
               Productos por vencer
@@ -211,7 +244,7 @@ export function DashboardPage() {
             )}
           </div>
 
-          {/* Deudores */}
+          {/* Listado de clientes con saldo pendiente en cuenta corriente */}
           <div className="card">
             <h2 className="text-sm font-semibold text-surface-400 uppercase tracking-wider mb-3">
               Cuentas corrientes con saldo

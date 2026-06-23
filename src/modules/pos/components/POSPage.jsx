@@ -1,13 +1,16 @@
 /**
- * POSPage — Página principal del módulo de ventas.
+ * POSPage — Página principal del módulo de ventas (punto de venta).
  *
- * Flujo:
- *  1. Carga las cajas y busca si hay una sesión abierta.
- *  2. Si no hay sesión → muestra CashSessionModal (mode='open').
- *  3. Si hay sesión → muestra el POS completo (ProductSearch + Cart).
- *  4. El cajero puede:
- *     - Agregar productos al carrito y cobrar (PaymentModal)
- *     - Cerrar el turno (CashSessionModal mode='close')
+ * Flujo de la página:
+ *  1. Al montar, carga las cajas registradoras y busca si hay una sesión abierta.
+ *  2. Si no hay sesión abierta → muestra CashSessionModal (mode='open') para abrir turno.
+ *  3. Si hay sesión activa → muestra el POS completo con ProductSearch (izquierda) + Cart (derecha).
+ *  4. Acciones disponibles para el cajero:
+ *     - Buscar y agregar productos al carrito
+ *     - Cobrar venta (abre PaymentModal)
+ *     - Cerrar turno de caja (abre CashSessionModal mode='close')
+ *
+ * También carga las reglas de descuento activas al montar para aplicarlas automáticamente.
  */
 import { useState, useEffect } from 'react'
 import { LogOut, ShoppingCart } from 'lucide-react'
@@ -29,28 +32,48 @@ import { Button }           from '@/shared/components/Button'
 import { formatCurrency, formatDateTime } from '@/shared/utils/formatters'
 import { ROLE_LABELS }      from '@/routes/roleRoutes'
 
+/**
+ * Componente página del punto de venta.
+ * Orquesta todo el flujo de ventas: sesión de caja, búsqueda,
+ * carrito, cobro y confirmación.
+ */
 export function POSPage() {
+  // Perfil del usuario autenticado (cajero)
   const { profile } = useAuthStore()
+  // Hook de sesión de caja: estado de la sesión, cajas disponibles y operaciones
   const { session, registers, loading, openSession, closeSession, refresh } = useCashSession()
 
+  // Estado: controla la visibilidad del modal de cierre de turno
   const [showCloseModal,  setShowCloseModal]   = useState(false)
+  // Estado: controla la visibilidad del modal de pago/cobro
   const [showPayment,     setShowPayment]      = useState(false)
+  // Estado: última venta registrada (se muestra en SaleSuccessModal)
   const [lastSale,        setLastSale]         = useState(null)
+  // Estado: totales del turno para el modal de cierre
   const [sessionTotals,   setSessionTotals]    = useState(null)
 
+  // Acciones del store del carrito usadas directamente en este componente
   const addItem      = useCartStore((s) => s.addItem)
   const setDiscounts = useCartStore((s) => s.setDiscounts)
 
-  // Cargar reglas de descuento activas al montar
+  /**
+   * Efecto: carga las reglas de descuento activas desde la base de datos al montar.
+   * Las inyecta en el store del carrito para que se apliquen automáticamente a los ítems.
+   */
   useEffect(() => {
     getActiveDiscounts().then(setDiscounts).catch(() => {})
   }, [setDiscounts])
 
-  // Cajero efectivo: el perfil logueado
+  // Referencia al cajero actual (perfil logueado)
   const cashier = profile
 
-  // ── Handlers ──────────────────────────────────────────────────────
+  // ── Handlers (manejadores de eventos) ─────────────────────────────
 
+  /**
+   * Abre una sesión/turno de caja con la caja y monto indicados.
+   * @param {number|string} registerId - ID de la caja seleccionada
+   * @param {number} amount - Monto inicial de efectivo en caja
+   */
   const handleOpenSession = async (registerId, amount) => {
     try {
       await openSession(registerId, amount)
@@ -60,6 +83,10 @@ export function POSPage() {
     }
   }
 
+  /**
+   * Solicita el cierre del turno: primero obtiene los totales del turno
+   * desde el backend y luego abre el modal de cierre.
+   */
   const handleRequestClose = async () => {
     try {
       const totals = await getSessionTotals(session.id)
@@ -70,6 +97,10 @@ export function POSPage() {
     }
   }
 
+  /**
+   * Cierra el turno de caja con el monto de efectivo contado.
+   * @param {number} closingAmount - Efectivo contado al cerrar la caja
+   */
   const handleCloseSession = async (closingAmount) => {
     try {
       await closeSession(closingAmount)
@@ -80,13 +111,18 @@ export function POSPage() {
     }
   }
 
+  /**
+   * Callback ejecutado tras una venta exitosa.
+   * Guarda la venta para mostrar el modal de confirmación y cierra el modal de pago.
+   * @param {Object} sale - Objeto de la venta registrada (con sale_number, total, etc.)
+   */
   const handleSaleSuccess = (sale) => {
     setLastSale(sale)
     setShowPayment(false)
     toast.success(`Venta #${sale.sale_number} registrada`)
   }
 
-  // ── Loading ───────────────────────────────────────────────────────
+  // ── Pantalla de carga mientras se obtiene el estado de la sesión ───
 
   if (loading) {
     return (
@@ -96,7 +132,7 @@ export function POSPage() {
     )
   }
 
-  // ── Sin sesión → abrir caja ───────────────────────────────────────
+  // ── Sin sesión activa: mostrar modal de apertura de caja ──────────
 
   if (!session) {
     return (
@@ -108,14 +144,14 @@ export function POSPage() {
     )
   }
 
-  // ── POS activo ────────────────────────────────────────────────────
+  // ── POS activo: interfaz completa de ventas ───────────────────────
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
 
-      {/* ── Topbar del POS ──────────────────────────────────────────── */}
+      {/* ── Barra superior del POS ── */}
       <header className="flex-shrink-0 flex items-center gap-3 px-4 py-2.5 bg-surface-900 border-b border-surface-800">
-        {/* Icono + nombre de caja */}
+        {/* Ícono y nombre de la caja registradora */}
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 bg-primary-600 rounded-lg flex items-center justify-center">
             <ShoppingCart className="w-4 h-4 text-white" />
@@ -125,7 +161,7 @@ export function POSPage() {
           </span>
         </div>
 
-        {/* Cajero activo */}
+        {/* Información del turno: fecha/hora de apertura y nombre del cajero */}
         <div className="flex-1 flex items-center gap-2">
           <span className="text-surface-500 text-xs hidden md:block">
             {formatDateTime(session.opened_at)}
@@ -135,7 +171,7 @@ export function POSPage() {
           </span>
         </div>
 
-        {/* Acciones */}
+        {/* Botón para cerrar turno */}
         <div className="flex items-center gap-2">
           <Button
             variant="secondary"
@@ -149,21 +185,22 @@ export function POSPage() {
         </div>
       </header>
 
-      {/* ── Layout principal: búsqueda + carrito ───────────────────── */}
+      {/* ── Layout principal: búsqueda de productos + carrito ── */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Panel izquierdo: búsqueda de productos */}
+        {/* Panel izquierdo: búsqueda y selección de productos */}
         <div className="flex-1 overflow-hidden">
           <ProductSearch onAdd={addItem} />
         </div>
 
-        {/* Panel derecho: carrito */}
+        {/* Panel derecho: carrito con ítems, totales y botón cobrar */}
         <div className="w-80 xl:w-96 flex-shrink-0 overflow-hidden">
           <Cart onCheckout={() => setShowPayment(true)} />
         </div>
       </div>
 
-      {/* ── Modales ────────────────────────────────────────────────── */}
+      {/* ── Modales superpuestos ── */}
 
+      {/* Modal de cobro/pago */}
       {showPayment && (
         <PaymentModal
           session={session}
@@ -173,6 +210,7 @@ export function POSPage() {
         />
       )}
 
+      {/* Modal de cierre de turno */}
       {showCloseModal && (
         <CashSessionModal
           mode="close"
@@ -183,6 +221,7 @@ export function POSPage() {
         />
       )}
 
+      {/* Modal de confirmación de venta exitosa */}
       {lastSale && (
         <SaleSuccessModal
           sale={lastSale}

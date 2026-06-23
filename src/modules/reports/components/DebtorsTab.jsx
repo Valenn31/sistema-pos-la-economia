@@ -1,7 +1,11 @@
 /**
- * DebtorsTab — Listado de clientes con saldo pendiente.
- * KPIs: total deudores, monto total, promedio por deudor.
- * Exporta a Excel y PDF.
+ * DebtorsTab — Pestaña de reporte de deudores.
+ *
+ * Muestra un listado de clientes con saldo pendiente (deuda > 0).
+ * Incluye KPIs resumen (total deudores, monto total, promedio, superan límite),
+ * tabla ordenable por columnas y exportación a Excel y PDF.
+ *
+ * @module reports/components/DebtorsTab
  */
 import { useState, useEffect } from 'react'
 import { FileSpreadsheet, FileText, AlertCircle, Users } from 'lucide-react'
@@ -13,12 +17,27 @@ import { getCustomers } from '@/modules/customers/services/customerService'
 import { exportToExcel, exportToPDF } from '@/shared/utils/exporters'
 import { formatCurrency } from '@/shared/utils/formatters'
 
+/**
+ * Componente que renderiza la pestaña de deudores dentro de Reportes.
+ * Carga todos los clientes, filtra los que tienen saldo > 0,
+ * muestra KPIs y una tabla ordenable con acciones de exportación.
+ *
+ * @returns {JSX.Element} Pestaña de deudores
+ */
 export function DebtorsTab() {
+  /** Estado: lista de clientes con saldo pendiente */
   const [debtors, setDebtors] = useState([])
+  /** Estado: indica si se están cargando los datos */
   const [loading, setLoading] = useState(true)
+  /** Estado: campo por el cual se ordena la tabla */
   const [sortField, setSortField] = useState('current_balance')
+  /** Estado: dirección de ordenamiento (true = ascendente, false = descendente) */
   const [sortAsc,   setSortAsc]   = useState(false)
 
+  /**
+   * Hook de efecto: carga todos los clientes al montar el componente
+   * y filtra únicamente los que tienen saldo pendiente (current_balance > 0).
+   */
   useEffect(() => {
     setLoading(true)
     getCustomers({ activeOnly: false })
@@ -27,6 +46,10 @@ export function DebtorsTab() {
       .finally(() => setLoading(false))
   }, [])
 
+  /**
+   * Ordena la lista de deudores según el campo y dirección de ordenamiento actual.
+   * Soporta comparación tanto numérica como de strings (case-insensitive).
+   */
   const sorted = [...debtors].sort((a, b) => {
     let av = a[sortField] ?? 0
     let bv = b[sortField] ?? 0
@@ -37,15 +60,27 @@ export function DebtorsTab() {
     return 0
   })
 
+  /**
+   * Alterna el campo de ordenamiento o invierte la dirección
+   * si se hace clic en la misma columna.
+   * @param {string} field - Nombre del campo a ordenar
+   */
   const toggleSort = (field) => {
     if (sortField === field) setSortAsc(!sortAsc)
     else { setSortField(field); setSortAsc(false) }
   }
 
+  /** KPI: monto total adeudado por todos los deudores */
   const totalOwed  = debtors.reduce((s, c) => s + (c.current_balance ?? 0), 0)
+  /** KPI: deuda promedio por deudor */
   const avgOwed    = debtors.length ? totalOwed / debtors.length : 0
+  /** KPI: cantidad de clientes que superan su límite de crédito */
   const overLimit  = debtors.filter((c) => c.credit_limit > 0 && c.current_balance > c.credit_limit).length
 
+  /**
+   * Exporta el listado de deudores a un archivo Excel.
+   * Incluye nombre, teléfono, documento, deuda, límite de crédito, etc.
+   */
   const doExcel = () => {
     const rows = sorted.map((c) => ({
       'Cliente':         c.full_name,
@@ -59,6 +94,10 @@ export function DebtorsTab() {
     exportToExcel(rows, `deudores_${new Date().toISOString().slice(0,10)}`, 'Deudores')
   }
 
+  /**
+   * Exporta el listado de deudores a un archivo PDF.
+   * Genera columnas simplificadas con nombre, teléfono, deuda, límite y estado.
+   */
   const doPdf = () => {
     const cols = [
       { header: 'Cliente',        dataKey: 'nombre' },
@@ -77,6 +116,15 @@ export function DebtorsTab() {
     exportToPDF(cols, rows, `Reporte de Deudores — ${new Date().toLocaleDateString('es-AR')}`, `deudores_${new Date().toISOString().slice(0,10)}`)
   }
 
+  /**
+   * Componente interno para encabezados de columna ordenables.
+   * Muestra una flecha indicando la dirección de orden actual.
+   *
+   * @param {Object} props
+   * @param {string} props.field - Campo del objeto deudor para ordenar
+   * @param {React.ReactNode} props.children - Texto del encabezado
+   * @param {boolean} [props.right] - Si true, alinea el texto a la derecha
+   */
   const SortTh = ({ field, children, right }) => (
     <th
       className={`px-4 py-3 cursor-pointer select-none hover:text-white transition-colors ${right ? 'text-right' : ''}`}
@@ -89,27 +137,31 @@ export function DebtorsTab() {
 
   return (
     <div className="space-y-4">
-      {/* KPIs */}
+      {/* Tarjetas KPI: resumen de deudores */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {/* KPI: cantidad de clientes con deuda */}
         <div className="card text-center">
           <p className="text-2xl font-bold text-red-400">{debtors.length}</p>
           <p className="text-xs text-surface-500">clientes con deuda</p>
         </div>
+        {/* KPI: monto total adeudado */}
         <div className="card text-center">
           <p className="text-2xl font-bold text-red-400">{formatCurrency(totalOwed)}</p>
           <p className="text-xs text-surface-500">total adeudado</p>
         </div>
+        {/* KPI: deuda promedio por deudor */}
         <div className="card text-center">
           <p className="text-2xl font-bold text-yellow-400">{formatCurrency(avgOwed)}</p>
           <p className="text-xs text-surface-500">deuda promedio</p>
         </div>
+        {/* KPI: clientes que superan su límite de crédito */}
         <div className="card text-center">
           <p className={`text-2xl font-bold ${overLimit > 0 ? 'text-orange-400' : 'text-surface-500'}`}>{overLimit}</p>
           <p className="text-xs text-surface-500">superan límite</p>
         </div>
       </div>
 
-      {/* Acciones */}
+      {/* Botones de exportación: Excel y PDF */}
       {debtors.length > 0 && (
         <div className="flex gap-2 justify-end">
           <Button variant="secondary" onClick={doExcel}>
@@ -121,10 +173,11 @@ export function DebtorsTab() {
         </div>
       )}
 
-      {/* Tabla */}
+      {/* Tabla de deudores o estados de carga/vacío */}
       {loading ? (
         <div className="flex justify-center py-12"><Spinner /></div>
       ) : debtors.length === 0 ? (
+        /* Estado vacío: no hay deudores */
         <div className="card text-center py-16 text-surface-500">
           <Users className="w-12 h-12 mx-auto mb-3 opacity-30" />
           <p>No hay clientes con saldo pendiente</p>
@@ -144,6 +197,7 @@ export function DebtorsTab() {
             </thead>
             <tbody className="divide-y divide-surface-800">
               {sorted.map((c) => {
+                /** Flag: indica si el cliente supera su límite de crédito */
                 const over = c.credit_limit > 0 && c.current_balance > c.credit_limit
                 return (
                   <tr key={c.id} className={`hover:bg-surface-800/40 transition-colors ${!c.is_active ? 'opacity-50' : ''}`}>
@@ -158,6 +212,7 @@ export function DebtorsTab() {
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-1.5">
+                        {/* Ícono de alerta si supera el límite de crédito */}
                         {over && (
                           <AlertCircle className="w-3.5 h-3.5 text-orange-400 flex-shrink-0" title="Supera el límite de crédito" />
                         )}

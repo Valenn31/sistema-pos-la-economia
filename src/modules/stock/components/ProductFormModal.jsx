@@ -1,5 +1,12 @@
 /**
- * ProductFormModal — Modal para crear y editar productos.
+ * ProductFormModal — Modal para crear y editar productos del inventario.
+ *
+ * Formulario completo con todos los campos del producto: nombre, SKU,
+ * código de barras, categoría, unidad de medida, precios (costo/venta),
+ * configuración de IVA, stock mínimo, vencimiento, estado activo/inactivo
+ * y descripción opcional.
+ *
+ * @module stock/components/ProductFormModal
  */
 import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
@@ -8,13 +15,35 @@ import { Modal } from '@/shared/components/Modal'
 import { Button } from '@/shared/components/Button'
 import { createProduct, updateProduct } from '../services/productService'
 
+/** Unidades de medida disponibles para los productos */
 const UNITS = ['unidad', 'kg', 'gramo', 'litro', 'ml', 'docena', 'caja', 'bolsa']
+
+/** Tasas de IVA disponibles según normativa argentina */
 const IVA_RATES = [0, 10.5, 21]
 
+/**
+ * Modal de formulario para crear o editar un producto.
+ *
+ * @param {Object} props
+ * @param {boolean} props.open - Controla la visibilidad del modal
+ * @param {Function} props.onClose - Callback al cerrar el modal
+ * @param {Function} props.onSaved - Callback al guardar exitosamente
+ * @param {Object|null} props.product - Producto a editar (null = modo creación)
+ * @param {Array} props.categories - Lista de categorías disponibles para asignar
+ * @returns {JSX.Element} Modal de formulario de producto
+ */
 export function ProductFormModal({ open, onClose, onSaved, product, categories }) {
+  /** Flag: determina si estamos en modo edición (true) o creación (false) */
   const isEditing = !!product
+
+  /** Hook de formulario con validación (react-hook-form) */
   const { register, handleSubmit, reset, watch, formState: { errors, isSubmitting } } = useForm()
 
+  /**
+   * Hook de efecto: resetea el formulario al abrir el modal.
+   * En modo edición precarga los datos del producto existente.
+   * En modo creación establece valores por defecto razonables.
+   */
   useEffect(() => {
     if (open) {
       reset(product ? {
@@ -43,6 +72,10 @@ export function ProductFormModal({ open, onClose, onSaved, product, categories }
     }
   }, [open, product, reset])
 
+  /**
+   * Envía el formulario de creación o edición de producto.
+   * @param {Object} data - Todos los campos del formulario
+   */
   const onSubmit = async (data) => {
     try {
       if (isEditing) {
@@ -59,19 +92,22 @@ export function ProductFormModal({ open, onClose, onSaved, product, categories }
     }
   }
 
+  /** Valor actual del checkbox "IVA incluido en precio" (para texto dinámico) */
   const ivaIncluded = watch('iva_included')
+  /** Valor actual del checkbox "Tiene vencimiento" (para mostrar/ocultar campo de fecha) */
   const hasExpiry   = watch('has_expiry')
 
   return (
     <Modal open={open} onClose={onClose} title={isEditing ? 'Editar producto' : 'Nuevo producto'} size="lg">
       <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4">
 
-        {/* Nombre + SKU + Código de barras */}
+        {/* Campo: Nombre del producto (obligatorio) */}
         <div>
           <label className="label-base">Nombre *</label>
           <input className="input-base" placeholder="Ej: Leche entera 1L" {...register('name', { required: 'Requerido' })} />
           {errors.name && <p className="field-error">{errors.name.message}</p>}
         </div>
+        {/* Campos: SKU (código interno) y Código de barras (EAN) */}
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="label-base">SKU (código interno)</label>
@@ -83,7 +119,7 @@ export function ProductFormModal({ open, onClose, onSaved, product, categories }
           </div>
         </div>
 
-        {/* Categoría + Unidad */}
+        {/* Campos: Categoría y Unidad de medida */}
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="label-base">Categoría</label>
@@ -102,7 +138,7 @@ export function ProductFormModal({ open, onClose, onSaved, product, categories }
           </div>
         </div>
 
-        {/* Precios */}
+        {/* Campos: Precio de costo y Precio de venta */}
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="label-base">Precio costo ($)</label>
@@ -115,7 +151,7 @@ export function ProductFormModal({ open, onClose, onSaved, product, categories }
           </div>
         </div>
 
-        {/* IVA */}
+        {/* Campos: Tasa de IVA y checkbox de IVA incluido */}
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="label-base">Tasa IVA (%)</label>
@@ -133,7 +169,7 @@ export function ProductFormModal({ open, onClose, onSaved, product, categories }
           </div>
         </div>
 
-        {/* Stock mínimo + opciones */}
+        {/* Campos: Stock mínimo, checkbox de vencimiento y checkbox de activo */}
         <div className="grid grid-cols-3 gap-3">
           <div>
             <label className="label-base">Stock mínimo</label>
@@ -153,7 +189,7 @@ export function ProductFormModal({ open, onClose, onSaved, product, categories }
           </div>
         </div>
 
-        {/* Fecha de vencimiento (visible si has_expiry) */}
+        {/* Campo condicional: Fecha de vencimiento (visible solo si has_expiry está marcado) */}
         {hasExpiry && (
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -163,12 +199,13 @@ export function ProductFormModal({ open, onClose, onSaved, product, categories }
           </div>
         )}
 
-        {/* Descripción */}
+        {/* Campo: Descripción opcional */}
         <div>
           <label className="label-base">Descripción</label>
           <textarea rows={2} className="input-base resize-none" placeholder="Descripción opcional…" {...register('description')} />
         </div>
 
+        {/* Botones de acción: cancelar y guardar */}
         <div className="flex gap-3 pt-2">
           <Button type="button" variant="secondary" onClick={onClose} className="flex-1">Cancelar</Button>
           <Button type="submit" loading={isSubmitting} className="flex-1">

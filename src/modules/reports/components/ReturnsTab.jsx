@@ -1,11 +1,13 @@
 /**
- * ReturnsTab — Procesamiento de devoluciones desde Reportes.
+ * ReturnsTab — Pestaña de procesamiento de devoluciones desde Reportes.
  *
- * Flujo:
- *  1. Cajero ingresa número de venta y busca
+ * Flujo completo de devolución:
+ *  1. El cajero ingresa el número de venta y busca
  *  2. Se muestran los ítems con cantidades originales y ya devueltas
- *  3. Selecciona items/cantidades a devolver + motivo obligatorio
- *  4. Confirma → createReturn restaura stock y ajusta saldo de cuenta
+ *  3. Selecciona los ítems y cantidades a devolver + motivo obligatorio
+ *  4. Al confirmar, createReturn restaura stock y ajusta saldo de cuenta corriente
+ *
+ * @module reports/components/ReturnsTab
  */
 import { useState, useMemo } from 'react'
 import { Search, RotateCcw, AlertTriangle, CheckCircle } from 'lucide-react'
@@ -17,25 +19,47 @@ import { getSaleByNumber, getPreviousReturns, createReturn } from '@/modules/pos
 import { useAuthStore } from '@/shared/store/authStore'
 import { formatCurrency, formatDateTime } from '@/shared/utils/formatters'
 
+/** Mapa de métodos de pago a sus etiquetas legibles en español */
 const METHOD_LABELS = {
   efectivo: 'Efectivo', debito: 'Débito', credito: 'Crédito',
   qr: 'QR/MP', transferencia: 'Transferencia', cuenta: 'Cta. Cte.',
 }
 
+/**
+ * Componente que gestiona el flujo completo de devoluciones de ventas.
+ * Busca una venta por número, muestra sus ítems, permite seleccionar
+ * cantidades a devolver y procesa la devolución.
+ *
+ * @returns {JSX.Element} Pestaña de devoluciones
+ */
 export function ReturnsTab() {
+  /** Usuario autenticado, obtenido del store global */
   const { user } = useAuthStore()
 
+  /** Estado: número de venta ingresado por el usuario */
   const [saleNumber,  setSaleNumber]  = useState('')
+  /** Estado: datos completos de la venta encontrada */
   const [sale,        setSale]        = useState(null)
+  /** Estado: lista de devoluciones previas de esta venta */
   const [prevReturns, setPrevReturns] = useState([])
-  const [selections,  setSelections]  = useState({}) // { saleItemId: { checked, qty } }
+  /** Estado: selecciones del usuario { saleItemId: { checked, qty } } */
+  const [selections,  setSelections]  = useState({})
+  /** Estado: motivo de la devolución (campo obligatorio) */
   const [reason,      setReason]      = useState('')
+  /** Estado: indica si se está buscando la venta */
   const [searching,   setSearching]   = useState(false)
+  /** Estado: indica si se está procesando la devolución */
   const [processing,  setProcessing]  = useState(false)
+  /** Estado: indica si la devolución se completó exitosamente */
   const [done,        setDone]        = useState(false)
+  /** Estado: checkbox para decidir si reponer stock automáticamente */
   const [restoreStock, setRestoreStock] = useState(true)
 
-  // Mapa de cantidades ya devueltas por sale_item_id
+  /**
+   * Mapa memo de cantidades ya devueltas por sale_item_id.
+   * Recorre todas las devoluciones previas y suma las cantidades
+   * por cada ítem de la venta original.
+   */
   const returnedMap = useMemo(() => {
     const map = {}
     for (const ret of prevReturns) {
@@ -46,7 +70,10 @@ export function ReturnsTab() {
     return map
   }, [prevReturns])
 
-  // Total a devolver según selección actual
+  /**
+   * Calcula el monto total a devolver según la selección actual del usuario.
+   * Solo suma los ítems marcados como checked con cantidad > 0.
+   */
   const returnTotal = useMemo(() => {
     if (!sale) return 0
     return (sale.sale_items ?? []).reduce((sum, item) => {
@@ -56,6 +83,11 @@ export function ReturnsTab() {
     }, 0)
   }, [selections, sale])
 
+  /**
+   * Busca la venta por número ingresado.
+   * Resetea estados previos, obtiene la venta y sus devoluciones anteriores,
+   * e inicializa las selecciones con las cantidades máximas devolvibles.
+   */
   const handleSearch = async () => {
     if (!saleNumber.trim()) return
     setSearching(true)
@@ -70,7 +102,7 @@ export function ReturnsTab() {
       const prev = await getPreviousReturns(found.id)
       setSale(found)
       setPrevReturns(prev)
-      // Inicializar selecciones
+      // Inicializar selecciones: cada ítem desmarcado con cantidad máxima devolvible
       const init = {}
       for (const item of (found.sale_items ?? [])) {
         init[item.id] = { checked: false, qty: item.quantity - (prev.reduce((s, r) =>
@@ -82,6 +114,10 @@ export function ReturnsTab() {
     finally { setSearching(false) }
   }
 
+  /**
+   * Alterna la selección (checked/unchecked) de un ítem de la venta.
+   * @param {string} itemId - ID del ítem de la venta
+   */
   const toggleItem = (itemId) => {
     setSelections((prev) => ({
       ...prev,
@@ -89,11 +125,22 @@ export function ReturnsTab() {
     }))
   }
 
+  /**
+   * Actualiza la cantidad a devolver de un ítem, asegurando que esté
+   * dentro del rango válido (0.001 a max).
+   * @param {string} itemId - ID del ítem de la venta
+   * @param {string} value - Valor ingresado en el input
+   * @param {number} max - Cantidad máxima devolvible
+   */
   const setQty = (itemId, value, max) => {
     const qty = Math.min(Math.max(0.001, parseFloat(value) || 0), max)
     setSelections((prev) => ({ ...prev, [itemId]: { ...prev[itemId], qty } }))
   }
 
+  /**
+   * Procesa la devolución. Valida que haya ítems seleccionados y un motivo,
+   * luego llama al servicio createReturn que restaura stock y ajusta cuentas.
+   */
   const handleProcess = async () => {
     const items = (sale.sale_items ?? [])
       .filter((item) => selections[item.id]?.checked && selections[item.id]?.qty > 0)
@@ -125,7 +172,7 @@ export function ReturnsTab() {
   return (
     <div className="space-y-4 max-w-3xl">
 
-      {/* Buscador */}
+      {/* Buscador de venta por número */}
       <div className="card flex gap-3 items-end">
         <div className="flex-1">
           <label className="label-base">Número de venta</label>
@@ -143,7 +190,7 @@ export function ReturnsTab() {
         </Button>
       </div>
 
-      {/* Confirmación */}
+      {/* Mensaje de confirmación cuando la devolución se procesó exitosamente */}
       {done && (
         <div className="card flex items-center gap-3 border-green-700 bg-green-900/20">
           <CheckCircle className="w-5 h-5 text-green-400 shrink-0" />
@@ -151,11 +198,13 @@ export function ReturnsTab() {
         </div>
       )}
 
+      {/* Indicador de carga mientras se busca la venta */}
       {searching && <div className="flex justify-center py-10"><Spinner /></div>}
 
+      {/* Detalle de la venta encontrada y formulario de devolución */}
       {sale && (
         <>
-          {/* Info de la venta */}
+          {/* Información general de la venta */}
           <div className="card space-y-2">
             <div className="flex items-center justify-between">
               <h2 className="font-semibold text-white">
@@ -164,11 +213,13 @@ export function ReturnsTab() {
               <Badge color="gray">{sale.receipt_type}</Badge>
             </div>
             <p className="text-xs text-surface-400">{formatDateTime(sale.created_at)}</p>
+            {/* Nombre del cliente si existe */}
             {sale.customers && (
               <p className="text-sm text-surface-300">
                 Cliente: <span className="text-white">{sale.customers.full_name}</span>
               </p>
             )}
+            {/* Desglose de métodos de pago utilizados */}
             <div className="flex gap-3 flex-wrap">
               {(sale.sale_payments ?? []).map((p, i) => (
                 <span key={i} className="text-xs text-surface-400">
@@ -181,7 +232,7 @@ export function ReturnsTab() {
             </p>
           </div>
 
-          {/* Aviso si ya hay devoluciones */}
+          {/* Advertencia si la venta ya tiene devoluciones previas */}
           {prevReturns.length > 0 && (
             <div className="flex items-start gap-2 bg-yellow-900/20 border border-yellow-700/40 rounded-xl px-4 py-3">
               <AlertTriangle className="w-4 h-4 text-yellow-400 mt-0.5 shrink-0" />
@@ -192,7 +243,7 @@ export function ReturnsTab() {
             </div>
           )}
 
-          {/* Tabla de ítems */}
+          {/* Tabla de ítems de la venta con selección para devolver */}
           <div className="overflow-x-auto rounded-xl border border-surface-800">
             <table className="w-full text-sm">
               <thead>
@@ -207,9 +258,13 @@ export function ReturnsTab() {
               </thead>
               <tbody className="divide-y divide-surface-800">
                 {(sale.sale_items ?? []).map((item) => {
+                  /** Cantidad ya devuelta de este ítem en devoluciones previas */
                   const alreadyReturned = returnedMap[item.id] ?? 0
+                  /** Cantidad máxima que aún se puede devolver */
                   const maxReturnable   = item.quantity - alreadyReturned
+                  /** Estado de selección actual de este ítem */
                   const sel             = selections[item.id] ?? { checked: false, qty: maxReturnable }
+                  /** Flag: ítem completamente devuelto, no seleccionable */
                   const disabled        = maxReturnable <= 0
 
                   return (
@@ -217,6 +272,7 @@ export function ReturnsTab() {
                       key={item.id}
                       className={`transition-colors ${disabled ? 'opacity-40' : 'hover:bg-surface-800/40'}`}
                     >
+                      {/* Checkbox de selección */}
                       <td className="px-4 py-3">
                         <input
                           type="checkbox"
@@ -226,24 +282,29 @@ export function ReturnsTab() {
                           onChange={() => toggleItem(item.id)}
                         />
                       </td>
+                      {/* Nombre y SKU del producto */}
                       <td className="px-4 py-3">
                         <p className="text-white font-medium">{item.products?.name ?? '—'}</p>
                         {item.products?.sku && (
                           <p className="text-xs text-surface-500">{item.products.sku}</p>
                         )}
                       </td>
+                      {/* Precio unitario */}
                       <td className="px-4 py-3 text-right text-surface-300">
                         {formatCurrency(item.unit_price)}
                       </td>
+                      {/* Cantidad original vendida */}
                       <td className="px-4 py-3 text-right text-surface-300">
                         {item.quantity} {item.products?.unit_of_measure ?? ''}
                       </td>
+                      {/* Cantidad ya devuelta previamente */}
                       <td className="px-4 py-3 text-right">
                         {alreadyReturned > 0
                           ? <span className="text-yellow-400">{alreadyReturned}</span>
                           : <span className="text-surface-600">—</span>
                         }
                       </td>
+                      {/* Input de cantidad a devolver o indicador de devuelto completo */}
                       <td className="px-4 py-3 text-right">
                         {disabled ? (
                           <span className="text-surface-600 text-xs">Devuelto completo</span>
@@ -267,8 +328,9 @@ export function ReturnsTab() {
             </table>
           </div>
 
-          {/* Motivo + total + botón */}
+          {/* Sección inferior: motivo, opción de stock, total y botón de procesar */}
           <div className="card space-y-4">
+            {/* Campo de motivo de devolución (obligatorio) */}
             <div>
               <label className="label-base">Motivo de devolución <span className="text-red-400">*</span></label>
               <textarea
@@ -280,6 +342,7 @@ export function ReturnsTab() {
               />
             </div>
 
+            {/* Checkbox para decidir si se devuelve la mercadería al stock */}
             <label className="flex items-center gap-2 cursor-pointer select-none">
               <input
                 type="checkbox"
@@ -293,6 +356,7 @@ export function ReturnsTab() {
               )}
             </label>
 
+            {/* Total a devolver y botón de confirmación */}
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-surface-500">Total a devolver</p>

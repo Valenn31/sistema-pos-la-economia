@@ -1,6 +1,8 @@
 /**
- * SettingsPage — Configuración general del negocio.
- * Solo accesible para Superadmin.
+ * SettingsPage — Página de configuración general del negocio.
+ * Solo accesible para el rol Superadmin.
+ * Permite editar datos fiscales, pie de ticket, ancho de papel
+ * y días de alerta de vencimiento.
  */
 import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
@@ -9,12 +11,20 @@ import { Button } from '@/shared/components/Button'
 import { Spinner } from '@/shared/components/Spinner'
 import { getSettings, saveSettings } from '../services/adminService'
 
+/** Opciones de condición fiscal disponibles para el negocio */
 const FISCAL_CONDITIONS = ['Responsable Inscripto', 'Monotributista', 'Exento', 'Consumidor Final']
 
+/**
+ * SettingsPage — Componente de configuración del sistema.
+ * Contiene dos formularios: datos del negocio e impresora/tickets.
+ * Ambos comparten la misma acción de guardado.
+ */
 export function SettingsPage() {
+  // Indicador de carga mientras se obtiene la configuración actual
   const [loading, setLoading] = useState(true)
   const { register, handleSubmit, reset, formState: { isSubmitting } } = useForm()
 
+  // Cargar la configuración existente al montar y rellenar el formulario
   useEffect(() => {
     getSettings()
       .then((s) => reset({
@@ -30,6 +40,7 @@ export function SettingsPage() {
       .finally(() => setLoading(false))
   }, [reset])
 
+  /** Envía los datos del formulario al servicio para persistir los cambios */
   const onSubmit = async (data) => {
     try {
       await saveSettings(data)
@@ -39,6 +50,7 @@ export function SettingsPage() {
     }
   }
 
+  // Mostrar spinner mientras se carga la configuración
   if (loading) return <div className="flex justify-center py-16"><Spinner /></div>
 
   return (
@@ -46,14 +58,17 @@ export function SettingsPage() {
       <div className="p-6 max-w-2xl mx-auto space-y-6">
         <h1 className="text-2xl font-bold text-white">Configuración</h1>
 
+        {/* Formulario 1: Datos del negocio (nombre, CUIT, dirección, condición fiscal, pie de ticket) */}
         <form onSubmit={handleSubmit(onSubmit)} className="card space-y-5">
           <h2 className="text-base font-semibold text-white">Datos del negocio</h2>
 
+          {/* Campo: Nombre del negocio */}
           <div>
             <label className="label-base">Nombre del negocio *</label>
             <input className="input-base" placeholder="Ej: Supermercado La Economía" {...register('business_name')} />
           </div>
 
+          {/* Campos: CUIT y condición fiscal en grilla de 2 columnas */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="label-base">CUIT</label>
@@ -68,11 +83,13 @@ export function SettingsPage() {
             </div>
           </div>
 
+          {/* Campo: Dirección del negocio */}
           <div>
             <label className="label-base">Dirección</label>
             <input className="input-base" placeholder="Av. San Martín 123, Ciudad" {...register('address')} />
           </div>
 
+          {/* Campo: Mensaje de pie del ticket impreso */}
           <div>
             <label className="label-base">Pie del ticket / Mensaje de cierre</label>
             <textarea
@@ -88,10 +105,12 @@ export function SettingsPage() {
           </div>
         </form>
 
+        {/* Formulario 2: Configuración de impresora y alertas de vencimiento */}
         <form onSubmit={handleSubmit(onSubmit)} className="card space-y-5">
           <h2 className="text-base font-semibold text-white">Impresora / Tickets</h2>
 
           <div className="grid grid-cols-2 gap-4">
+            {/* Campo: Ancho de papel para la ticketera térmica */}
             <div>
               <label className="label-base">Ancho de papel</label>
               <select className="input-base" {...register('paper_width')}>
@@ -100,6 +119,7 @@ export function SettingsPage() {
               </select>
               <p className="text-xs text-surface-500 mt-1">Ajusta el formato del ticket al tamaño del rollo</p>
             </div>
+            {/* Campo: Días de anticipación para alertar vencimientos en el dashboard */}
             <div>
               <label className="label-base">Alerta de vencimiento (días)</label>
               <input type="number" min="1" max="365" step="1" className="input-base" {...register('expiry_alert_days')} />
@@ -107,6 +127,7 @@ export function SettingsPage() {
             </div>
           </div>
 
+          {/* Bloque informativo: instrucciones para impresión silenciosa */}
           <div className="bg-surface-800 border border-surface-700 rounded-xl p-4 space-y-2">
             <p className="text-sm font-medium text-white">Impresión silenciosa (sin diálogo)</p>
             <p className="text-xs text-surface-400">

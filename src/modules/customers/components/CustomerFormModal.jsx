@@ -1,15 +1,26 @@
 /**
- * CustomerFormModal — Crear / editar cliente completo.
+ * CustomerFormModal — Modal para crear o editar un cliente completo.
+ * Incluye datos personales, de contacto, documento y condiciones comerciales
+ * (límite de crédito y descuento especial).
+ *
+ * @param {object} props
+ * @param {boolean} props.open - Controla si el modal está visible
+ * @param {Function} props.onClose - Callback para cerrar el modal
+ * @param {Function} props.onSave - Callback que recibe los datos del formulario al guardar
+ * @param {object|null} props.initialData - Datos del cliente a editar (null = creación)
  */
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Modal }  from '@/shared/components/Modal'
 import { Button } from '@/shared/components/Button'
 
+/** Tipos de documento disponibles para clientes argentinos */
 const DOC_TYPES = ['DNI', 'CUIT', 'CUIL', 'Pasaporte']
 
 export function CustomerFormModal({ open, onClose, onSave, initialData }) {
+  // Determina si estamos editando un cliente existente o creando uno nuevo
   const isEditing = !!initialData
+  // Indicador de guardado en curso para deshabilitar el botón de submit
   const [saving, setSaving] = useState(false)
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm({
@@ -20,6 +31,7 @@ export function CustomerFormModal({ open, onClose, onSave, initialData }) {
     },
   })
 
+  // Resetear el formulario con los datos del cliente al abrir el modal
   useEffect(() => {
     if (open) {
       reset(initialData
@@ -43,6 +55,7 @@ export function CustomerFormModal({ open, onClose, onSave, initialData }) {
     }
   }, [open, initialData, reset])
 
+  /** Envía los datos del formulario al callback onSave del componente padre */
   const onSubmit = async (data) => {
     setSaving(true)
     try { await onSave(data) } finally { setSaving(false) }
@@ -52,7 +65,7 @@ export function CustomerFormModal({ open, onClose, onSave, initialData }) {
     <Modal open={open} onClose={onClose} title={isEditing ? 'Editar cliente' : 'Nuevo cliente'} size="lg">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
 
-        {/* Nombre */}
+        {/* Campo: Nombre completo del cliente (obligatorio) */}
         <div>
           <label className="label-base">Nombre completo <span className="text-red-400">*</span></label>
           <input className="input-base" placeholder="Juan García"
@@ -60,7 +73,7 @@ export function CustomerFormModal({ open, onClose, onSave, initialData }) {
           {errors.full_name && <p className="field-error">{errors.full_name.message}</p>}
         </div>
 
-        {/* Documento */}
+        {/* Campos: Tipo y número de documento en grilla de 3 columnas */}
         <div className="grid grid-cols-3 gap-3">
           <div>
             <label className="label-base">Tipo doc.</label>
@@ -76,7 +89,7 @@ export function CustomerFormModal({ open, onClose, onSave, initialData }) {
           </div>
         </div>
 
-        {/* Contacto */}
+        {/* Campos: Teléfono y email en grilla de 2 columnas */}
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="label-base">Teléfono</label>
@@ -90,14 +103,14 @@ export function CustomerFormModal({ open, onClose, onSave, initialData }) {
           </div>
         </div>
 
-        {/* Dirección */}
+        {/* Campo: Dirección del cliente */}
         <div>
           <label className="label-base">Dirección</label>
           <input className="input-base" placeholder="San Martín 1234"
             {...register('address')} />
         </div>
 
-        {/* Condiciones comerciales */}
+        {/* Campos: Condiciones comerciales (límite de crédito y descuento especial) */}
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="label-base">Límite de crédito ($)</label>
@@ -116,12 +129,13 @@ export function CustomerFormModal({ open, onClose, onSave, initialData }) {
           </div>
         </div>
 
-        {/* Activo */}
+        {/* Checkbox: Cliente activo/inactivo */}
         <label className="flex items-center gap-2 cursor-pointer">
           <input type="checkbox" className="checkbox-base" {...register('is_active')} />
           <span className="text-sm text-surface-300">Cliente activo</span>
         </label>
 
+        {/* Botones de acción: Cancelar y Guardar/Crear */}
         <div className="flex justify-end gap-3 pt-2">
           <Button type="button" variant="secondary" onClick={onClose}>Cancelar</Button>
           <Button type="submit" loading={saving}>{isEditing ? 'Guardar' : 'Crear'}</Button>

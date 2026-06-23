@@ -1,6 +1,13 @@
 /**
- * DiscountFormModal — Crear / editar reglas de descuento.
- * Los campos visibles cambian según el tipo seleccionado.
+ * DiscountFormModal — Modal para crear o editar reglas de descuento.
+ * Los campos visibles del formulario cambian dinámicamente según el tipo
+ * de descuento seleccionado (producto, categoría, regla de cantidad, etc.).
+ *
+ * @param {object} props
+ * @param {boolean} props.open - Controla si el modal está visible
+ * @param {Function} props.onClose - Callback para cerrar el modal
+ * @param {Function} props.onSave - Callback que recibe los datos del formulario al guardar
+ * @param {object|null} props.initialData - Datos del descuento a editar (null = creación)
  */
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
@@ -9,6 +16,7 @@ import { Button }  from '@/shared/components/Button'
 import { getCategories } from '@/modules/stock/services/productService'
 import { getProducts }   from '@/modules/stock/services/productService'
 
+/** Opciones de tipo de descuento disponibles en el select */
 const TYPE_OPTIONS = [
   { value: 'product',          label: '% sobre producto específico' },
   { value: 'category',         label: '% sobre categoría' },
@@ -18,9 +26,13 @@ const TYPE_OPTIONS = [
 ]
 
 export function DiscountFormModal({ open, onClose, onSave, initialData }) {
+  // Determina si estamos editando un descuento existente o creando uno nuevo
   const isEditing = !!initialData
+  // Indicador de guardado en curso para deshabilitar el botón de submit
   const [saving,     setSaving]     = useState(false)
+  // Lista de categorías para el selector (se carga al abrir el modal)
   const [categories, setCategories] = useState([])
+  // Lista de productos activos para el selector (se carga al abrir el modal)
   const [products,   setProducts]   = useState([])
 
   const { register, handleSubmit, watch, reset, formState: { errors } } = useForm({
@@ -30,14 +42,17 @@ export function DiscountFormModal({ open, onClose, onSave, initialData }) {
     },
   })
 
+  // Observa el tipo seleccionado para mostrar/ocultar campos condicionalmente
   const selectedType = watch('type')
 
+  // Cargar categorías y productos activos cada vez que se abre el modal
   useEffect(() => {
     if (!open) return
     getCategories().then(setCategories).catch(() => {})
     getProducts({ activeOnly: true }).then(setProducts).catch(() => {})
   }, [open])
 
+  // Resetear el formulario con los datos iniciales al abrir (edición o creación)
   useEffect(() => {
     if (open) {
       reset(initialData
@@ -57,21 +72,23 @@ export function DiscountFormModal({ open, onClose, onSave, initialData }) {
     }
   }, [open, initialData, reset])
 
+  /** Envía los datos del formulario al callback onSave del componente padre */
   const onSubmit = async (data) => {
     setSaving(true)
     try { await onSave(data) } finally { setSaving(false) }
   }
 
-  const needsProduct  = ['product', 'quantity_rule'].includes(selectedType)
-  const needsCategory = selectedType === 'category'
-  const needsValue    = selectedType !== 'quantity_rule'
-  const needsQtyRule  = selectedType === 'quantity_rule'
+  // Flags para determinar qué campos mostrar según el tipo de descuento
+  const needsProduct  = ['product', 'quantity_rule'].includes(selectedType) // Necesita selector de producto
+  const needsCategory = selectedType === 'category'                         // Necesita selector de categoría
+  const needsValue    = selectedType !== 'quantity_rule'                     // Necesita campo de valor (% o $)
+  const needsQtyRule  = selectedType === 'quantity_rule'                     // Necesita campos de regla de cantidad
 
   return (
     <Modal open={open} onClose={onClose} title={isEditing ? 'Editar descuento' : 'Nuevo descuento'} size="md">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
 
-        {/* Nombre */}
+        {/* Campo: Nombre del descuento */}
         <div>
           <label className="label-base">Nombre <span className="text-red-400">*</span></label>
           <input className="input-base" placeholder="Ej: 3×2 en bebidas, 10% en carnes…"
@@ -79,7 +96,7 @@ export function DiscountFormModal({ open, onClose, onSave, initialData }) {
           {errors.name && <p className="field-error">{errors.name.message}</p>}
         </div>
 
-        {/* Tipo */}
+        {/* Campo: Tipo de descuento (determina qué otros campos se muestran) */}
         <div>
           <label className="label-base">Tipo <span className="text-red-400">*</span></label>
           <select className="input-base" {...register('type')}>
@@ -89,7 +106,7 @@ export function DiscountFormModal({ open, onClose, onSave, initialData }) {
           </select>
         </div>
 
-        {/* Producto (para product y quantity_rule) */}
+        {/* Campo condicional: Selector de producto (para tipos 'product' y 'quantity_rule') */}
         {needsProduct && (
           <div>
             <label className="label-base">Producto <span className="text-red-400">*</span></label>
@@ -106,7 +123,7 @@ export function DiscountFormModal({ open, onClose, onSave, initialData }) {
           </div>
         )}
 
-        {/* Categoría */}
+        {/* Campo condicional: Selector de categoría (solo para tipo 'category') */}
         {needsCategory && (
           <div>
             <label className="label-base">Categoría <span className="text-red-400">*</span></label>
@@ -121,7 +138,7 @@ export function DiscountFormModal({ open, onClose, onSave, initialData }) {
           </div>
         )}
 
-        {/* Valor (%, $ o vacío para qty_rule) */}
+        {/* Campo condicional: Valor del descuento en % o monto fijo (no aplica a regla de cantidad) */}
         {needsValue && (
           <div>
             <label className="label-base">
@@ -141,7 +158,7 @@ export function DiscountFormModal({ open, onClose, onSave, initialData }) {
           </div>
         )}
 
-        {/* Regla de cantidad */}
+        {/* Campos condicionales: Regla de cantidad (ej: comprá 3 llevá 4) */}
         {needsQtyRule && (
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -159,12 +176,13 @@ export function DiscountFormModal({ open, onClose, onSave, initialData }) {
           </div>
         )}
 
-        {/* Activo */}
+        {/* Checkbox: Activo/inactivo del descuento */}
         <label className="flex items-center gap-2 cursor-pointer">
           <input type="checkbox" className="checkbox-base" {...register('is_active')} />
           <span className="text-sm text-surface-300">Activo</span>
         </label>
 
+        {/* Botones de acción: Cancelar y Guardar/Crear */}
         <div className="flex justify-end gap-3 pt-2">
           <Button type="button" variant="secondary" onClick={onClose}>Cancelar</Button>
           <Button type="submit" loading={saving}>{isEditing ? 'Guardar' : 'Crear'}</Button>
