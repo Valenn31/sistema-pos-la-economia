@@ -36,20 +36,30 @@ export const useUIStore = create((set) => ({
   /** El sidebar empieza abierto por defecto */
   sidebarOpen: true,
 
+  /** Tema activo: 'dark' o 'light'. Se lee de localStorage o default 'dark' */
+  theme: localStorage.getItem('pos-theme') || 'dark',
+
   /* ── Acciones ────────────────────────────────────────────────── */
 
   /**
    * toggleSidebar — Alterna el estado del sidebar.
-   * Si está abierto lo cierra, si está cerrado lo abre.
    */
   toggleSidebar: () => set((s) => ({ sidebarOpen: !s.sidebarOpen })),
 
   /**
    * setSidebarOpen — Establece el estado del sidebar directamente.
-   * Útil cuando se necesita forzar un estado específico (ej: cerrar
-   * en mobile al hacer resize o al navegar).
-   *
    * @param {boolean} open - true para abrir, false para cerrar
    */
   setSidebarOpen: (open) => set({ sidebarOpen: open }),
+
+  /**
+   * toggleTheme — Alterna entre modo oscuro y claro.
+   * Persiste la preferencia en localStorage y aplica la clase al <html>.
+   */
+  toggleTheme: () => set((s) => {
+    const next = s.theme === 'dark' ? 'light' : 'dark'
+    localStorage.setItem('pos-theme', next)
+    document.documentElement.className = next
+    return { theme: next }
+  }),
 }))

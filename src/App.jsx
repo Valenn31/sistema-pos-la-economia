@@ -9,10 +9,12 @@
  *  3. Configura el sistema de notificaciones toast (react-hot-toast)
  *     con estilos oscuros que coinciden con el tema de la app.
  */
+import { useEffect }      from 'react'
 import { RouterProvider } from 'react-router-dom'
 import { Toaster }        from 'react-hot-toast'
 import { router }         from '@/routes/router'
 import { useAuth }        from '@/modules/auth/hooks/useAuth'
+import { useUIStore }     from '@/shared/store/uiStore'
 
 /**
  * AuthProvider — Componente envolvente que activa el hook useAuth.
@@ -43,6 +45,13 @@ function AuthProvider({ children }) {
  * @returns {JSX.Element} Árbol raíz de la aplicación
  */
 export default function App() {
+  const theme = useUIStore((s) => s.theme)
+
+  // Aplicar clase de tema al <html> al montar y cuando cambie
+  useEffect(() => {
+    document.documentElement.className = theme
+  }, [theme])
+
   return (
     <AuthProvider>
       {/* Proveedor del router — renderiza las rutas según la URL actual */}

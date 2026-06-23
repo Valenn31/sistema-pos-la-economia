@@ -17,9 +17,11 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import {
   ShoppingCart, Package, Truck, BarChart3, Settings, Users,
   LogOut, Menu, X, ChevronRight, ShieldCheck, LayoutDashboard, Tag, UserCheck,
+  Sun, Moon,
 } from 'lucide-react'
 import { signOut } from '@/modules/auth/services/authService'
 import { useAuthStore } from '@/shared/store/authStore'
+import { useUIStore }   from '@/shared/store/uiStore'
 import { ROLE_LABELS } from '@/routes/roleRoutes'
 import toast from 'react-hot-toast'
 
@@ -77,6 +79,8 @@ export function AppLayout() {
 
   /** Datos del usuario y rol activo desde el store global */
   const { profile, activeRole, clearSession } = useAuthStore()
+  /** Tema actual y función para alternar */
+  const { theme, toggleTheme } = useUIStore()
 
   /** Hook de navegación programática de React Router */
   const navigate = useNavigate()
@@ -223,8 +227,16 @@ export function AppLayout() {
           >
             {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
-          {/* Espaciador flexible que empuja el badge a la derecha */}
+          {/* Espaciador flexible que empuja los controles a la derecha */}
           <div className="flex-1" />
+          {/* Toggle de tema claro/oscuro */}
+          <button
+            onClick={toggleTheme}
+            className="p-2 rounded-lg text-surface-400 hover:text-surface-100 hover:bg-surface-800 transition-colors"
+            title={theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+          >
+            {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          </button>
           {/* Badge del rol activo — siempre visible en el topbar */}
           <span className="badge bg-primary-600/15 text-primary-400 border border-primary-600/20">
             <RoleIcon className="w-3 h-3 mr-1" />
