@@ -77,10 +77,10 @@ export function buildTicketHtml(sale, settings = {}) {
         <td colspan="2" style="padding-top:4px">${nameShort}</td>
       </tr>
       <tr>
-        <td style="padding-left:8px;color:#666">${qtyStr}</td>
-        <td style="text-align:right;font-weight:600">${subStr}</td>
+        <td style="padding-left:8px;color:#000">${qtyStr}</td>
+        <td style="text-align:right;font-weight:900">${subStr}</td>
       </tr>
-      ${item.discount_amount > 0 ? `<tr><td colspan="2" style="padding-left:8px;color:#999;font-size:9pt">Descuento: -${fmtCurrency(item.discount_amount)}</td></tr>` : ''}
+      ${item.discount_amount > 0 ? `<tr><td colspan="2" style="padding-left:8px;color:#000;font-size:9pt">Descuento: -${fmtCurrency(item.discount_amount)}</td></tr>` : ''}
     `
   }).join('')
 
@@ -101,20 +101,22 @@ export function buildTicketHtml(sale, settings = {}) {
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: 'Courier New', Courier, monospace;
-      font-size: ${paperWidth === 58 ? '8.5pt' : '10pt'};
+      font-size: ${paperWidth === 58 ? '9pt' : '10.5pt'};
+      font-weight: 600;
       width: ${bodyWidth};
       color: #000;
       background: #fff;
+      -webkit-print-color-adjust: exact;
     }
     .center  { text-align: center; }
-    .bold    { font-weight: 700; }
-    .large   { font-size: 13pt; }
-    .small   { font-size: 8.5pt; }
-    .sep     { border-top: 1px dashed #000; margin: 5px 0; }
-    .sep-solid { border-top: 1px solid #000; margin: 5px 0; }
+    .bold    { font-weight: 900; }
+    .large   { font-size: 14pt; font-weight: 900; }
+    .small   { font-size: 9pt; }
+    .sep     { border-top: 2px dashed #000; margin: 5px 0; }
+    .sep-solid { border-top: 2px solid #000; margin: 5px 0; }
     table    { width: 100%; border-collapse: collapse; }
     td       { padding: 1px 0; vertical-align: top; }
-    .total-row td { font-size: 12pt; font-weight: 700; padding-top: 4px; }
+    .total-row td { font-size: 13pt; font-weight: 900; padding-top: 4px; }
     @media screen {
       body { padding: 16px; background: #f5f5f5; max-width: 380px; margin: 0 auto; }
     }
@@ -179,7 +181,7 @@ export function buildTicketHtml(sale, settings = {}) {
 
   <!-- Pie -->
   <div class="center" style="margin-top:6px;font-size:9pt">${footer}</div>
-  <div class="center small" style="margin-top:4px;color:#999">POS La Economía</div>
+  <div class="center small" style="margin-top:4px;color:#000">POS La Economía</div>
 </body>
 </html>`
 }
