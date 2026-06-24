@@ -59,15 +59,15 @@ export async function getSalesReport({ from, to }) {
  *   - count: Cantidad de ventas
  */
 export function getSalesSummary(sales) {
-  const totalRevenue = sales.reduce((s, v) => s + v.total, 0)
-  const totalDiscount = sales.reduce((s, v) => s + (v.discount_total ?? 0), 0)
-  const totalIva = sales.reduce((s, v) => s + (v.iva_total ?? 0), 0)
+  const totalRevenue = sales.reduce((s, v) => s + Number(v.total), 0)
+  const totalDiscount = sales.reduce((s, v) => s + Number(v.discount_total ?? 0), 0)
+  const totalIva = sales.reduce((s, v) => s + Number(v.iva_total ?? 0), 0)
 
   /** @type {Record<string, number>} Acumula montos por método de pago */
   const byMethod = {}
   for (const sale of sales) {
     for (const p of (sale.sale_payments ?? [])) {
-      byMethod[p.method] = (byMethod[p.method] ?? 0) + p.amount
+      byMethod[p.method] = (byMethod[p.method] ?? 0) + Number(p.amount)
     }
   }
 

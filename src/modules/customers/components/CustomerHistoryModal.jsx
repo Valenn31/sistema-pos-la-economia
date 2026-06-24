@@ -11,7 +11,7 @@
  * @param {string} props.userId - ID del usuario logueado (para registrar quién hizo el pago)
  * @param {Function} [props.onPaymentDone] - Callback opcional que se ejecuta tras un pago exitoso
  */
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Fragment } from 'react'
 import { ShoppingCart, Wallet, ChevronDown, ChevronUp, DollarSign, FileText } from 'lucide-react'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
@@ -341,10 +341,9 @@ export function CustomerHistoryModal({ open, onClose, customer, userId, onPaymen
                   </thead>
                   <tbody className="divide-y divide-surface-800">
                     {movements.map((m) => (
-                      <>
+                      <Fragment key={m.id}>
                         {/* Fila principal del movimiento */}
                         <tr
-                          key={m.id}
                           className={`transition-colors ${m.items ? 'cursor-pointer hover:bg-surface-800/40' : 'hover:bg-surface-800/40'}`}
                           onClick={() => m.items && toggleExpand(m.id)}
                         >
@@ -404,7 +403,7 @@ export function CustomerHistoryModal({ open, onClose, customer, userId, onPaymen
                             </td>
                           </tr>
                         )}
-                      </>
+                      </Fragment>
                     ))}
                   </tbody>
                 </table>

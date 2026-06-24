@@ -126,13 +126,14 @@ export async function createReturn({ saleId, userId, items, reason, sale, restor
     if (loc) {
       for (const item of items) {
         /** Incrementa el stock del producto en la ubicación */
-        await supabase.rpc('increment_stock', {
+        const { error: incErr } = await supabase.rpc('increment_stock', {
           p_product_id:  item.productId,
           p_location_id: loc.id,
           p_quantity:    item.quantity,
         })
+        if (incErr) console.error('increment_stock failed:', incErr)
         /** Registra el movimiento de stock de tipo devolución */
-        await supabase.from('stock_movements').insert({
+        const { error: movErr } = await supabase.from('stock_movements').insert({
           product_id:     item.productId,
           to_location_id: loc.id,
           quantity:       item.quantity,
@@ -141,6 +142,7 @@ export async function createReturn({ saleId, userId, items, reason, sale, restor
           reference_type: 'return',
           user_id:        userId,
         })
+        if (movErr) console.error('stock_movements insert failed:', movErr)
       }
     }
   }

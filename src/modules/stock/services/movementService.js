@@ -91,7 +91,7 @@ export async function getLocations() {
     .eq('is_active', true)
     .order('name')
   if (error) throw error
-  return data
+  return data ?? []
 }
 
 // ── Traslado entre ubicaciones ────────────────────────────────────────
@@ -327,5 +327,5 @@ export async function getMovements({ productId, limit = 100, offset = 0 } = {}) 
 
   const { data, error } = await query
   if (error) throw error
-  return data
+  return data ?? []
 }

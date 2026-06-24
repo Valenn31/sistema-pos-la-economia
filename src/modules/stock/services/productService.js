@@ -125,7 +125,7 @@ export async function getProducts({ search = '', categoryId = null, activeOnly =
 
   const { data, error } = await query
   if (error) throw error
-  return data
+  return data ?? []
 }
 
 /**
@@ -221,6 +221,7 @@ export async function toggleProductActive(id, isActive) {
  * @returns {object} Objeto limpio listo para insertar/actualizar en la tabla `products`
  */
 function cleanPayload(d) {
+  const rate = parseFloat(d.iva_rate)
   return {
     sku:             d.sku             || null,
     barcode:         d.barcode         || null,
@@ -230,7 +231,7 @@ function cleanPayload(d) {
     unit_of_measure: d.unit_of_measure || 'unidad',
     price_cost:      parseFloat(d.price_cost)  || null,
     price_sell:      parseFloat(d.price_sell),
-    iva_rate:        parseFloat(d.iva_rate)     ?? 21,
+    iva_rate:        isNaN(rate) ? 21 : rate,
     iva_included:    Boolean(d.iva_included),
     min_stock:       parseFloat(d.min_stock)    || 0,
     has_expiry:      Boolean(d.has_expiry),

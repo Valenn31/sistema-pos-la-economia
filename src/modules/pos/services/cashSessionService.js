@@ -23,7 +23,7 @@ export async function getActiveRegisters() {
     .eq('is_active', true)
     .order('name')
   if (error) throw error
-  return data
+  return data ?? []
 }
 
 /**

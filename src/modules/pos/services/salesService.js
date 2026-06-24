@@ -109,14 +109,15 @@ export async function createSale(payload) {
 
     for (const item of items) {
       /** Decrementa stock vía RPC (SECURITY DEFINER, maneja el upsert de stock) */
-      await supabase.rpc('decrement_stock', {
+      const { error: decErr } = await supabase.rpc('decrement_stock', {
         p_product_id:  item.product.id,
         p_location_id: locationId,
         p_quantity:    item.quantity,
       })
+      if (decErr) console.error('decrement_stock failed:', decErr)
 
       /** Registra el movimiento de stock de tipo 'venta' */
-      await supabase.from('stock_movements').insert({
+      const { error: movErr } = await supabase.from('stock_movements').insert({
         product_id:       item.product.id,
         from_location_id: locationId,
         to_location_id:   null,
@@ -126,6 +127,7 @@ export async function createSale(payload) {
         reference_type:   'sale',
         user_id:          cashierId,
       })
+      if (movErr) console.error('stock_movements insert failed:', movErr)
     }
   }
 

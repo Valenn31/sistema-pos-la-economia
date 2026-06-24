@@ -205,7 +205,7 @@ export function SalesReportTab() {
             <tbody className="divide-y divide-surface-800">
               {/* Mensaje cuando no hay ventas en el período */}
               {sales.length === 0 && (
-                <tr><td colSpan={6} className="text-center text-surface-600 py-10">Sin ventas en el período</td></tr>
+                <tr><td colSpan={7} className="text-center text-surface-600 py-10">Sin ventas en el período</td></tr>
               )}
               {/* Filas de ventas (paginadas) */}
               {sales.slice((page - 1) * pageSize, page * pageSize).map((s) => (

@@ -301,7 +301,7 @@ export async function getDashboardStats() {
   ])
 
   const todaySales = salesRes.data ?? []
-  const totalHoy   = todaySales.reduce((s, v) => s + v.total, 0)
+  const totalHoy   = todaySales.reduce((s, v) => s + Number(v.total), 0)
 
   /**
    * Agrupa el stock por producto sumando las cantidades de todas las ubicaciones.
