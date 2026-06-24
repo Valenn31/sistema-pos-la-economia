@@ -63,6 +63,8 @@ export function CustomerHistoryModal({ open, onClose, customer, userId, onPaymen
   const [payNotes, setPayNotes]       = useState('')
   // Indicador de pago en curso
   const [paying, setPaying]           = useState(false)
+  // Mostrar todos los períodos o solo el actual
+  const [showAll, setShowAll]         = useState(false)
 
   /**
    * Carga en paralelo: extracto de cuenta, ventas y datos frescos del cliente.
@@ -73,7 +75,7 @@ export function CustomerHistoryModal({ open, onClose, customer, userId, onPaymen
     setLoading(true)
     try {
       const [stmt, salesData, fresh] = await Promise.all([
-        getAccountStatement(customer.id),
+        getAccountStatement(customer.id, { showAll }),
         getCustomerSales(customer.id, 50),
         getCustomerById(customer.id),
       ])
@@ -90,9 +92,15 @@ export function CustomerHistoryModal({ open, onClose, customer, userId, onPaymen
       setTab('cuenta')
       setShowPayForm(false)
       setExpanded({})
+      setShowAll(false)
       loadData()
     }
   }, [open, customer])
+
+  // Recargar cuando cambia el filtro de períodos
+  useEffect(() => {
+    if (open && customer) loadData()
+  }, [showAll])
 
   /** Alterna la expansión de una fila para ver/ocultar detalle de ítems */
   const toggleExpand = (id) => setExpanded((p) => ({ ...p, [id]: !p[id] }))
@@ -402,6 +410,14 @@ export function CustomerHistoryModal({ open, onClose, customer, userId, onPaymen
                 </table>
               </div>
             )
+          )}
+          {tab === 'cuenta' && (
+            <button
+              onClick={() => setShowAll((v) => !v)}
+              className="text-xs text-surface-500 hover:text-primary-400 transition-colors w-full text-center py-1"
+            >
+              {showAll ? '← Ver solo período actual' : 'Ver historial completo (todos los períodos)'}
+            </button>
           )}
 
           {/* Contenido de pestaña: Todas las compras del cliente */}

@@ -198,7 +198,7 @@ export async function getCustomerSales(customerId, limit = 20) {
  * @returns {Promise<object[]>} Array de movimientos ordenados por fecha con saldo acumulado
  * @throws {Error} Si falla alguna consulta a Supabase
  */
-export async function getAccountStatement(customerId) {
+export async function getAccountStatement(customerId, { showAll = false } = {}) {
   /** Consulta ventas y pagos en paralelo */
   const [salesRes, paymentsRes] = await Promise.all([
     supabase
@@ -256,10 +256,18 @@ export async function getAccountStatement(customerId) {
 
   /** Calcula el saldo acumulado recorriendo los movimientos en orden */
   let balance = 0
-  for (const m of movements) {
+  let lastZeroIndex = -1
+  for (let i = 0; i < movements.length; i++) {
+    const m = movements[i]
     if (m.type === 'debit') balance += m.amount
     else balance -= m.amount
     m.balance = Math.round(balance * 100) / 100
+    if (m.balance === 0) lastZeroIndex = i
+  }
+
+  /** Si showAll=false, devuelve solo el período actual (desde el último saldo 0) */
+  if (!showAll && lastZeroIndex >= 0 && lastZeroIndex < movements.length - 1) {
+    return movements.slice(lastZeroIndex + 1)
   }
 
   return movements
