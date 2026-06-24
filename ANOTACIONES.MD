@@ -23,7 +23,6 @@
 
 ## 🖨️ Impresión / Tickets
 
-- HACER UN GENERADOR DE TICKETS (OSEA LOS QUE VAN EN GONDOLA) CON LA INFO DEL PRODUCTO Y EL PRECIO (CORTE UN WORD)
 
 ---
 
@@ -54,3 +53,4 @@
 - ✅ IMPRIMIR CON LA TICKETERA + CONFIG DE TAMAÑO (config en Settings, ancho 58/80mm, launcher .bat para impresión silenciosa)
 - ✅ PONER MODO OSCURO Y CLARO PARA LA INTERFAZ (toggle sol/luna en topbar, CSS variables, persistencia en localStorage)
 - ✅ AL CERRAR UNA CAJA QUE NO SEA OBLIGATORIO ABRIR UNA INSTANTANEAMENTE (pantalla "No hay caja abierta" con opción de abrir o ir al dashboard)
+- ✅ HACER UN GENERADOR DE TICKETS DE GÓNDOLA (pestaña Etiquetas en Stock, filtros por categoría, preview, impresión A4)

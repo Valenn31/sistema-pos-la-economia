@@ -3,7 +3,7 @@
  * Tabs: Productos | Categorías | Niveles de Stock | Movimientos
  */
 import { useState, useEffect } from 'react'
-import { Package, Tag, BarChart3, History, Calendar } from 'lucide-react'
+import { Package, Tag, BarChart3, History, Calendar, Printer } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useAuthStore } from '@/shared/store/authStore'
 import { getCategories } from '../services/productService'
@@ -13,6 +13,7 @@ import { CategoriesTab } from './CategoriesTab'
 import { StockLevelsTab } from './StockLevelsTab'
 import { MovementsTab }  from './MovementsTab'
 import { ExpiryTab }     from './ExpiryTab'
+import { LabelsTab }     from './LabelsTab'
 
 const TABS = [
   { id: 'products',   label: 'Productos',     icon: Package,   roles: ['superadmin', 'admin', 'cajero', 'repositor'] },
@@ -20,6 +21,7 @@ const TABS = [
   { id: 'levels',     label: 'Niveles stock', icon: BarChart3, roles: ['superadmin', 'admin', 'cajero', 'repositor'] },
   { id: 'movements',  label: 'Movimientos',   icon: History,   roles: ['superadmin', 'admin', 'repositor'] },
   { id: 'expiry',     label: 'Vencimientos',  icon: Calendar,  roles: ['superadmin', 'admin', 'repositor'] },
+  { id: 'labels',     label: 'Etiquetas',     icon: Printer,   roles: ['superadmin', 'admin', 'repositor'] },
 ]
 
 export function StockPage() {
@@ -104,6 +106,9 @@ export function StockPage() {
         )}
         {activeTab === 'expiry' && (
           <ExpiryTab />
+        )}
+        {activeTab === 'labels' && (
+          <LabelsTab />
         )}
       </div>
     </div>
