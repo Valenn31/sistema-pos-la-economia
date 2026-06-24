@@ -12,13 +12,16 @@
  * @param {Function} [props.onPaymentDone] - Callback opcional que se ejecuta tras un pago exitoso
  */
 import { useState, useEffect } from 'react'
-import { ShoppingCart, Wallet, ChevronDown, ChevronUp, DollarSign } from 'lucide-react'
+import { ShoppingCart, Wallet, ChevronDown, ChevronUp, DollarSign, FileText } from 'lucide-react'
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
 import toast from 'react-hot-toast'
 import { Modal }   from '@/shared/components/Modal'
 import { Spinner } from '@/shared/components/Spinner'
 import { Badge }   from '@/shared/components/Badge'
 import { Button }  from '@/shared/components/Button'
 import { getAccountStatement, getCustomerSales, registerPayment, getCustomerById } from '../services/customerService'
+import { getSettings } from '@/modules/admin/services/adminService'
 import { formatCurrency, formatDateTime } from '@/shared/utils/formatters'
 
 /** Etiquetas legibles para cada método de pago */
@@ -114,6 +117,96 @@ export function CustomerHistoryModal({ open, onClose, customer, userId, onPaymen
     finally { setPaying(false) }
   }
 
+  /** Genera y descarga un PDF con el estado de cuenta corriente del cliente */
+  const handleExportPDF = async () => {
+    try {
+      const settings = await getSettings().catch(() => ({}))
+      const doc = new jsPDF()
+      const today = new Date().toLocaleDateString('es-AR')
+      const cust = currentCustomer ?? customer
+
+      // Encabezado del negocio
+      doc.setFontSize(16)
+      doc.setFont('helvetica', 'bold')
+      doc.text(settings.business_name ?? 'La Economía', 14, 18)
+      doc.setFontSize(9)
+      doc.setFont('helvetica', 'normal')
+      doc.setTextColor(100)
+      if (settings.cuit) doc.text(`CUIT: ${settings.cuit}`, 14, 24)
+      if (settings.address) doc.text(settings.address, 14, 29)
+
+      // Título del documento
+      doc.setFontSize(13)
+      doc.setFont('helvetica', 'bold')
+      doc.setTextColor(0)
+      doc.text('Estado de Cuenta Corriente', 14, 40)
+
+      // Datos del cliente
+      doc.setFontSize(10)
+      doc.setFont('helvetica', 'normal')
+      doc.text(`Cliente: ${cust?.full_name ?? '—'}`, 14, 48)
+      const clientInfo = [
+        cust?.document_number ? `Doc: ${cust.document_type ?? ''} ${cust.document_number}` : null,
+        cust?.phone ? `Tel: ${cust.phone}` : null,
+      ].filter(Boolean).join('   |   ')
+      if (clientInfo) doc.text(clientInfo, 14, 54)
+      doc.setFontSize(9)
+      doc.setTextColor(100)
+      doc.text(`Fecha de emisión: ${today}`, 14, 60)
+
+      // Tabla de movimientos
+      const cols = [
+        { header: 'Fecha', dataKey: 'fecha' },
+        { header: 'Detalle', dataKey: 'detalle' },
+        { header: 'Debe', dataKey: 'debe' },
+        { header: 'Haber', dataKey: 'haber' },
+        { header: 'Saldo', dataKey: 'saldo' },
+      ]
+      const rows = movements.map((m) => ({
+        fecha: formatDateTime(m.date),
+        detalle: m.description,
+        debe: m.type === 'debit' ? formatCurrency(m.amount) : '',
+        haber: m.type === 'credit' ? formatCurrency(m.amount) : '',
+        saldo: formatCurrency(m.balance),
+      }))
+
+      autoTable(doc, {
+        startY: 66,
+        columns: cols,
+        body: rows,
+        styles: { fontSize: 8, cellPadding: 2 },
+        headStyles: { fillColor: [22, 163, 74], textColor: 255, fontStyle: 'bold' },
+        columnStyles: {
+          debe:  { halign: 'right' },
+          haber: { halign: 'right' },
+          saldo: { halign: 'right', fontStyle: 'bold' },
+        },
+        alternateRowStyles: { fillColor: [245, 245, 245] },
+      })
+
+      // Saldo final destacado
+      const finalY = doc.lastAutoTable.finalY + 10
+      doc.setDrawColor(22, 163, 74)
+      doc.setLineWidth(0.5)
+      doc.line(14, finalY - 2, 196, finalY - 2)
+
+      doc.setFontSize(12)
+      doc.setFont('helvetica', 'bold')
+      doc.setTextColor(0)
+      doc.text('Saldo actual:', 14, finalY + 5)
+      doc.setTextColor(balance > 0 ? 220 : 22, balance > 0 ? 38 : 163, balance > 0 ? 38 : 74)
+      doc.text(formatCurrency(balance), 196, finalY + 5, { align: 'right' })
+
+      // Resumen
+      doc.setFontSize(8)
+      doc.setTextColor(130)
+      doc.text(`Total comprado en cta cte: ${formatCurrency(totalDebit)}   |   Total pagado: ${formatCurrency(totalCredit)}`, 14, finalY + 13)
+
+      doc.save(`cuenta_corriente_${(cust?.full_name ?? 'cliente').replace(/\s+/g, '_')}.pdf`)
+      toast.success('PDF descargado')
+    } catch { toast.error('Error al generar PDF') }
+  }
+
   // Cálculos de resumen: total debitado, total acreditado, saldo actual y total de ventas
   const totalDebit  = movements.filter((m) => m.type === 'debit').reduce((s, m) => s + m.amount, 0)
   const totalCredit = movements.filter((m) => m.type === 'credit').reduce((s, m) => s + m.amount, 0)
@@ -145,12 +238,19 @@ export function CustomerHistoryModal({ open, onClose, customer, userId, onPaymen
             </div>
           </div>
 
-          {/* Botón para abrir el formulario de pago (solo si hay deuda pendiente) */}
-          {balance > 0 && !showPayForm && (
-            <Button onClick={() => setShowPayForm(true)} className="w-full" size="lg">
-              <Wallet className="w-4 h-4" /> Registrar pago de deuda
-            </Button>
-          )}
+          {/* Acciones: pagar deuda + exportar PDF */}
+          <div className="flex gap-3">
+            {balance > 0 && !showPayForm && (
+              <Button onClick={() => setShowPayForm(true)} className="flex-1" size="lg">
+                <Wallet className="w-4 h-4" /> Registrar pago de deuda
+              </Button>
+            )}
+            {movements.length > 0 && (
+              <Button variant="secondary" onClick={handleExportPDF} size="lg" className={balance > 0 && !showPayForm ? '' : 'w-full'}>
+                <FileText className="w-4 h-4" /> Descargar estado de cuenta
+              </Button>
+            )}
+          </div>
 
           {/* Formulario de pago inline (aparece al presionar el botón anterior) */}
           {showPayForm && (

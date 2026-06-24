@@ -13,7 +13,6 @@
 
 ## 👤 Clientes / Cuenta Corriente
 
-- QUE SE PUEDA IMPRIMIR HISTORIAL DE DEUDA DE CLIENTE
 ---
 
 ## 🏧 Cajero / Caja
@@ -23,12 +22,6 @@
 
 ## 🖨️ Impresión / Tickets
 
-
----
-
-## 🏷️ Descuentos
-
-- QUE SE PUEDAN CREAR Y ELIMINAR TIPOS DE DESCUENTO
 
 ---
 
@@ -54,3 +47,4 @@
 - ✅ PONER MODO OSCURO Y CLARO PARA LA INTERFAZ (toggle sol/luna en topbar, CSS variables, persistencia en localStorage)
 - ✅ AL CERRAR UNA CAJA QUE NO SEA OBLIGATORIO ABRIR UNA INSTANTANEAMENTE (pantalla "No hay caja abierta" con opción de abrir o ir al dashboard)
 - ✅ HACER UN GENERADOR DE TICKETS DE GÓNDOLA (pestaña Etiquetas en Stock, filtros por categoría, preview, impresión A4)
+- ✅ QUE SE PUEDA IMPRIMIR HISTORIAL DE DEUDA DE CLIENTE (PDF descargable con estado de cuenta, movimientos y saldo)
