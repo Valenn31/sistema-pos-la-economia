@@ -39,6 +39,12 @@ export const useUIStore = create((set) => ({
   /** Tema activo: 'dark' o 'light'. Se lee de localStorage o default 'dark' */
   theme: localStorage.getItem('pos-theme') || 'dark',
 
+  /** ID de la sesión de caja activa (null si no hay turno abierto) */
+  activeSessionId: null,
+
+  /** Guarda el ID de la sesión activa para que otros componentes lo lean */
+  setActiveSessionId: (id) => set({ activeSessionId: id }),
+
   /* ── Acciones ────────────────────────────────────────────────── */
 
   /**

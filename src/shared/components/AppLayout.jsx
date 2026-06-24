@@ -17,13 +17,19 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import {
   ShoppingCart, Package, Truck, BarChart3, Settings, Users,
   LogOut, Menu, X, ChevronRight, ShieldCheck, LayoutDashboard, Tag, UserCheck,
-  Sun, Moon,
+  Sun, Moon, ClipboardList,
 } from 'lucide-react'
 import { signOut } from '@/modules/auth/services/authService'
 import { useAuthStore } from '@/shared/store/authStore'
 import { useUIStore }   from '@/shared/store/uiStore'
 import { ROLE_LABELS } from '@/routes/roleRoutes'
 import toast from 'react-hot-toast'
+
+/** Ítem de "Mi turno" — se agrega dinámicamente cuando hay caja abierta */
+const SHIFT_ITEM = {
+  label: 'Mi turno', icon: ClipboardList, to: '/pos/shift',
+  roles: ['superadmin', 'admin', 'cajero'],
+}
 
 /**
  * NAV_ITEMS — Configuración de los ítems del menú de navegación.
@@ -79,8 +85,8 @@ export function AppLayout() {
 
   /** Datos del usuario y rol activo desde el store global */
   const { profile, activeRole, clearSession } = useAuthStore()
-  /** Tema actual y función para alternar */
-  const { theme, toggleTheme } = useUIStore()
+  /** Tema actual, función para alternar y sesión activa */
+  const { theme, toggleTheme, activeSessionId } = useUIStore()
 
   /** Hook de navegación programática de React Router */
   const navigate = useNavigate()
@@ -115,8 +121,9 @@ export function AppLayout() {
     }
   }
 
-  /** Filtrar ítems de navegación según el rol activo del usuario */
-  const visibleItems = NAV_ITEMS.filter((item) => item.roles.includes(activeRole))
+  /** Filtrar ítems de navegación según el rol activo, agregar "Mi turno" si hay caja abierta */
+  const baseItems = activeSessionId ? [...NAV_ITEMS, SHIFT_ITEM] : NAV_ITEMS
+  const visibleItems = baseItems.filter((item) => item.roles.includes(activeRole))
 
   /** Obtener el componente de ícono correspondiente al rol activo */
   const RoleIcon = ROLE_ICON[activeRole] ?? ShieldCheck

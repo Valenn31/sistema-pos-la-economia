@@ -18,23 +18,6 @@
 
 ## 🏧 Cajero / Caja
 
-- AL CERRAR UNA CAJA QUE NO SEA OBLIGATORIO ABRIR UNA INSTANTANEAMENTE
-
----
-
-## 🔄 Devoluciones
-
----
-
-## 🏪 Proveedores / Notas de Pedido
-
-
-
----
-
-## 📦 Productos / Inventario
-
-- PODER BORRAR PRODUCTOS
 
 ---
 
@@ -47,12 +30,6 @@
 ## 🏷️ Descuentos
 
 - QUE SE PUEDAN CREAR Y ELIMINAR TIPOS DE DESCUENTO
-
----
-
-## ⚙️ General / UI
-
-- PONER MODO OSCURO Y CLARO PARA LA INTERFAZ
 
 ---
 
@@ -75,3 +52,5 @@
 - ✅ LA DEUDA EN LA TABLA APARECE SIEMPRE 0 (RPC fallaba silenciosamente, agregado fallback directo)
 - ✅ PROVEEDORES, AL HACER UNA NOTA DE COMPRA, EL DESPLEGABLE NO MUESTRA LOS PROVEEDORES
 - ✅ IMPRIMIR CON LA TICKETERA + CONFIG DE TAMAÑO (config en Settings, ancho 58/80mm, launcher .bat para impresión silenciosa)
+- ✅ PONER MODO OSCURO Y CLARO PARA LA INTERFAZ (toggle sol/luna en topbar, CSS variables, persistencia en localStorage)
+- ✅ AL CERRAR UNA CAJA QUE NO SEA OBLIGATORIO ABRIR UNA INSTANTANEAMENTE (pantalla "No hay caja abierta" con opción de abrir o ir al dashboard)

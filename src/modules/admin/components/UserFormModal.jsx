@@ -18,10 +18,14 @@ import { Button } from '@/shared/components/Button'
 import { Badge } from '@/shared/components/Badge'
 import { hasAdminClient } from '@/supabase/adminClient'
 import { createUser, updateUser } from '../services/adminService'
+import { useAuthStore } from '@/shared/store/authStore'
 
 export function UserFormModal({ open, onClose, onSaved, user, allRoles }) {
   // Determina si estamos editando un usuario existente o creando uno nuevo
   const isEditing = !!user
+  const { activeRole } = useAuthStore()
+  // Solo superadmin puede asignar el rol superadmin
+  const availableRoles = activeRole === 'superadmin' ? allRoles : allRoles.filter((r) => r.name !== 'superadmin')
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm()
 
   // Resetear el formulario con los datos del usuario al abrir el modal
@@ -123,7 +127,7 @@ export function UserFormModal({ open, onClose, onSaved, user, allRoles }) {
         <div>
           <label className="label-base">Roles *</label>
           <div className="flex flex-wrap gap-2 mt-1">
-            {allRoles.map((role) => (
+            {availableRoles.map((role) => (
               <label key={role.id} className="flex items-center gap-2 cursor-pointer bg-surface-800 border border-surface-700 rounded-lg px-3 py-2 hover:border-primary-600 transition-colors">
                 <input
                   type="checkbox"

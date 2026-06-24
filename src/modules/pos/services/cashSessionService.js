@@ -142,3 +142,25 @@ export async function getSessionTotals(sessionId) {
 
   return { totals, total, salesCount: salesRes.data.length, returnsTotal, returnsCount }
 }
+
+/**
+ * Obtiene el listado de ventas realizadas en una sesión de caja.
+ * Incluye número, fecha, total, cajero, cliente y métodos de pago.
+ *
+ * @param {string} sessionId - UUID de la sesión de caja
+ * @returns {Promise<object[]>} Lista de ventas con detalle
+ */
+export async function getSessionSales(sessionId) {
+  const { data, error } = await supabase
+    .from('sales')
+    .select(`
+      id, sale_number, created_at, total, receipt_type,
+      customers(full_name),
+      sale_payments(method, amount)
+    `)
+    .eq('session_id', sessionId)
+    .eq('status', 'completed')
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return data ?? []
+}

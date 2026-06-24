@@ -13,7 +13,8 @@
  * También carga las reglas de descuento activas al montar para aplicarlas automáticamente.
  */
 import { useState, useEffect } from 'react'
-import { LogOut, ShoppingCart } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { LogOut, ShoppingCart, DollarSign } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 import { useCashSession }      from '@/modules/pos/hooks/useCashSession'
@@ -40,8 +41,11 @@ import { ROLE_LABELS }      from '@/routes/roleRoutes'
 export function POSPage() {
   // Perfil del usuario autenticado (cajero)
   const { profile } = useAuthStore()
+  const navigate = useNavigate()
   // Hook de sesión de caja: estado de la sesión, cajas disponibles y operaciones
   const { session, registers, loading, openSession, closeSession, refresh } = useCashSession()
+  // Controla si se muestra el modal de apertura (false tras cerrar turno)
+  const [wantOpen, setWantOpen] = useState(false)
 
   // Estado: controla la visibilidad del modal de cierre de turno
   const [showCloseModal,  setShowCloseModal]   = useState(false)
@@ -132,15 +136,39 @@ export function POSPage() {
     )
   }
 
-  // ── Sin sesión activa: mostrar modal de apertura de caja ──────────
+  // ── Sin sesión activa ──────────────────────────────────────────────
 
   if (!session) {
+    if (wantOpen) {
+      return (
+        <CashSessionModal
+          mode="open"
+          registers={registers}
+          onOpen={handleOpenSession}
+          onCancel={() => setWantOpen(false)}
+        />
+      )
+    }
     return (
-      <CashSessionModal
-        mode="open"
-        registers={registers}
-        onOpen={handleOpenSession}
-      />
+      <div className="h-full flex items-center justify-center">
+        <div className="text-center space-y-5">
+          <div className="w-16 h-16 bg-surface-800 rounded-2xl flex items-center justify-center mx-auto">
+            <ShoppingCart className="w-8 h-8 text-surface-500" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-white mb-1">No hay caja abierta</h2>
+            <p className="text-surface-500 text-sm">Abrí un turno para empezar a vender o volvé al dashboard.</p>
+          </div>
+          <div className="flex gap-3 justify-center">
+            <Button variant="secondary" onClick={() => navigate('/admin/dashboard')}>
+              Ir al Dashboard
+            </Button>
+            <Button onClick={() => setWantOpen(true)}>
+              <DollarSign className="w-4 h-4" /> Abrir caja
+            </Button>
+          </div>
+        </div>
+      </div>
     )
   }
 

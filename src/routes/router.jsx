@@ -32,6 +32,7 @@ import { AppLayout }      from '@/shared/components/AppLayout'
 
 /* ── Páginas de cada módulo ────────────────────────────────────── */
 import { POSPage }        from '@/modules/pos/components/POSPage'
+import { ShiftSalesPage } from '@/modules/pos/components/ShiftSalesPage'
 import { StockPage }      from '@/modules/stock/components/StockPage'
 import { SuppliersPage }  from '@/modules/suppliers/components/SuppliersPage'
 import { DashboardPage }  from '@/modules/admin/components/DashboardPage'
@@ -89,6 +90,7 @@ export const router = createBrowserRouter([
             element: <RoleGuard allowed={['superadmin', 'admin', 'cajero']} />,
             children: [
               { path: '/pos', element: <POSPage /> },                     /* Interfaz de ventas */
+              { path: '/pos/shift', element: <ShiftSalesPage /> },       /* Ventas del turno activo */
             ],
           },
 

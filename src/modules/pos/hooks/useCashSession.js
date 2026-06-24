@@ -17,6 +17,7 @@
  */
 import { useState, useEffect, useCallback } from 'react'
 import { useAuthStore } from '@/shared/store/authStore'
+import { useUIStore }   from '@/shared/store/uiStore'
 import {
   getActiveRegisters,
   getActiveSession,
@@ -57,6 +58,7 @@ export function useCashSession() {
         if (s) { found = s; break }
       }
       setSession(found)
+      useUIStore.getState().setActiveSessionId(found?.id ?? null)
     } finally {
       setLoading(false)
     }
@@ -80,6 +82,7 @@ export function useCashSession() {
       openingAmount: amount,
     })
     setSession(s)
+    useUIStore.getState().setActiveSessionId(s.id)
     return s
   }
 
@@ -95,6 +98,7 @@ export function useCashSession() {
     await closeCashSession(session.id, closingAmount)
     // Limpiar la sesión del estado local (vuelve a mostrar el modal de apertura)
     setSession(null)
+    useUIStore.getState().setActiveSessionId(null)
   }
 
   return { session, registers, loading, openSession, closeSession, refresh: load }
