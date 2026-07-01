@@ -35,6 +35,12 @@ export function LoginForm() {
     checkSetupCompleted().then((done) => {
       if (!done) navigate('/setup', { replace: true })
       else setCheckingSetup(false)
+    }).catch(() => {
+      // No se pudo verificar el setup (ej: Supabase inalcanzable). No asumir
+      // "no configurado" — eso mandaría al wizard a un negocio ya configurado.
+      // Mostrar igual el formulario de login.
+      toast.error('No se pudo conectar con el servidor. Reintentá en unos segundos.')
+      setCheckingSetup(false)
     })
   }, [navigate])
 

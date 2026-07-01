@@ -91,9 +91,13 @@ export async function signOut() {
 /**
  * Verifica si el setup inicial ya fue completado.
  * Consulta la clave 'setup_completed' en `app_settings`.
- * Si no existe la clave o su valor no es 'true', retorna false.
+ * Si la clave no existe (PGRST116, fila no encontrada), retorna false: es
+ * la señal real de que el setup nunca se hizo. Cualquier otro error (caída
+ * de red, Supabase inalcanzable, RLS, etc.) se propaga en vez de asumir
+ * "no configurado", para no mandar a un usuario ya configurado al wizard.
  *
  * @returns {Promise<boolean>} true si ya se completó el setup inicial
+ * @throws {Error} Si la consulta falla por un motivo distinto a "fila no encontrada"
  */
 export async function checkSetupCompleted() {
   const { data, error } = await supabase
@@ -102,7 +106,10 @@ export async function checkSetupCompleted() {
     .eq('key', 'setup_completed')
     .single()
 
-  if (error) return false
+  if (error) {
+    if (error.code === 'PGRST116') return false
+    throw error
+  }
   return data?.value === 'true'
 }
 

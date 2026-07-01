@@ -9,13 +9,14 @@
  *  3. Crear cuenta Superadmin — Email, contraseña, PIN y nombre completo
  *  4. Confirmación — Todo listo, redirige al login
  */
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
 import { ShoppingCart, Building2, UserCog, CheckCircle2, ArrowRight, ArrowLeft } from 'lucide-react'
-import { createFirstSuperadmin } from '@/modules/auth/services/authService'
+import { createFirstSuperadmin, checkSetupCompleted } from '@/modules/auth/services/authService'
 import { Button } from '@/shared/components/Button'
+import { Spinner } from '@/shared/components/Spinner'
 
 /** Nombres de los pasos para el indicador de progreso superior */
 const STEPS = ['Bienvenida', 'Negocio', 'Superadmin', 'Listo']
@@ -23,18 +24,41 @@ const STEPS = ['Bienvenida', 'Negocio', 'Superadmin', 'Listo']
 /**
  * SetupWizard — Componente orquestador del wizard de configuración inicial.
  * Controla el paso actual y los datos del negocio que se pasan entre pasos.
+ * Si el setup ya fue completado, redirige a /login: este wizard es solo
+ * para la primera vez, no debe poder re-ejecutarse entrando a /setup a mano.
  */
 export function SetupWizard() {
   // Paso actual del wizard (0-3)
   const [step, setStep] = useState(0)
   // Datos del negocio capturados en el paso 2, pasados al paso 3
   const [businessData, setBusinessData] = useState(null)
+  // null mientras se verifica el estado del setup; evita el flash del wizard
+  const [alreadySetup, setAlreadySetup] = useState(null)
   const navigate = useNavigate()
+
+  useEffect(() => {
+    checkSetupCompleted()
+      .then((done) => {
+        if (done) navigate('/login', { replace: true })
+        else setAlreadySetup(false)
+      })
+      // Si falla la verificación (ej: Supabase inalcanzable), no bloquear
+      // el wizard: puede ser justamente la primera configuración.
+      .catch(() => setAlreadySetup(false))
+  }, [navigate])
 
   /** Avanza al siguiente paso del wizard */
   const next = () => setStep((s) => s + 1)
   /** Retrocede al paso anterior del wizard */
   const prev = () => setStep((s) => s - 1)
+
+  if (alreadySetup === null) {
+    return (
+      <div className="min-h-screen bg-surface-950 flex items-center justify-center">
+        <Spinner size="lg" />
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-surface-950 flex items-center justify-center p-4">
@@ -165,7 +189,7 @@ function StepBusiness({ onNext, onPrev }) {
 
         {/* Botones de navegación: Atrás y Siguiente */}
         <div className="flex gap-3 pt-2">
-          <Button variant="secondary" onClick={onPrev} className="flex-1">
+          <Button type="button" variant="secondary" onClick={onPrev} className="flex-1">
             <ArrowLeft className="w-4 h-4" /> Atrás
           </Button>
           <Button type="submit" className="flex-1">
@@ -284,7 +308,7 @@ function StepSuperadmin({ businessData, onNext, onPrev }) {
 
         {/* Botones de navegación: Atrás y Crear cuenta */}
         <div className="flex gap-3 pt-2">
-          <Button variant="secondary" onClick={onPrev} className="flex-1" disabled={isSubmitting}>
+          <Button type="button" variant="secondary" onClick={onPrev} className="flex-1" disabled={isSubmitting}>
             <ArrowLeft className="w-4 h-4" /> Atrás
           </Button>
           <Button type="submit" loading={isSubmitting} className="flex-1">

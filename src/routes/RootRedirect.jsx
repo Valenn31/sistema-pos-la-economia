@@ -15,6 +15,7 @@
  */
 import { useEffect, useState } from 'react'
 import { Navigate } from 'react-router-dom'
+import toast from 'react-hot-toast'
 import { checkSetupCompleted } from '@/modules/auth/services/authService'
 import { useAuthStore } from '@/shared/store/authStore'
 import { Spinner } from '@/shared/components/Spinner'
@@ -52,6 +53,12 @@ export function RootRedirect() {
         return
       }
       /* Sin sesión activa: ir al login */
+      setDestination('/login')
+    }).catch(() => {
+      // No se pudo verificar el setup (ej: Supabase inalcanzable). No asumir
+      // "no configurado" — eso mandaría al wizard a un negocio ya configurado.
+      // Ir al login, que es el destino seguro por defecto.
+      toast.error('No se pudo conectar con el servidor. Reintentá en unos segundos.')
       setDestination('/login')
     })
   }, [loading, user, activeRole])
