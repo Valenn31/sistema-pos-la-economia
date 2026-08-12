@@ -602,4 +602,9 @@ VITE_SUPABASE_ANON_KEY=
 ### Nota: Sprint PIN switch (cambio rápido cajero)
 - Ya estaba 100% implementado desde Sprint 2: `PinSwitchModal.jsx`, `verifyPin()` en `authService.js`, botón "Cambiar cajero" en `POSPage.jsx`.
 
+### Nota: Fix modo claro (flash + colores) + setup wizard
+- **index.html** — script inline en `<head>` que aplica la clase de tema (`localStorage['pos-theme']`) antes del primer render de React, elimina el flash oscuro→claro al cargar en modo claro
+- **index.css** — paleta `.light` corregida (tenía `--surface-400` y `--surface-500` duplicados); ahora es un espejo monótono de la escala slate, con tarjetas en blanco puro sobre fondo `slate-100` para dar jerarquía visual real; se agregan overrides `.light` para los tonos `-300/-400` de badges/alertas/errores (rojo, verde, amarillo, azul, púrpura, naranja), que están pensados para fondos oscuros y quedaban lavados sobre blanco
+- **authService.js** — `checkSetupCompleted()` ya no confunde error de red con "setup nunca hecho" (solo `PGRST116` = fila no encontrada cuenta como "no configurado"); `SetupWizard` redirige a `/login` si el setup ya está completo en vez de mostrarse sin control
+
 ## ESTADO ACTUAL: Sprints 10-12 completos ✅

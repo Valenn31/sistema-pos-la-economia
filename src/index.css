@@ -22,18 +22,22 @@
   }
 
   /* ── Paleta clara ────────────────────────────────────────────── */
+  /* Espejo de la escala slate: el token 950 (fondo de página) toma el
+     valor más claro y el 50 el más oscuro, en pasos monótonos sin
+     duplicados. El fondo de página usa slate-100 y las tarjetas van en
+     blanco puro para que "floten" con contraste real sobre la página. */
   .light {
-    --surface-50:   15  23  42;
-    --surface-100:  30  41  59;
-    --surface-200:  51  65  85;
-    --surface-300:  71  85 105;
-    --surface-400: 100 116 139;
+    --surface-50:    2   6  23;
+    --surface-100:  15  23  42;
+    --surface-200:  30  41  59;
+    --surface-300:  51  65  85;
+    --surface-400:  71  85 105;
     --surface-500: 100 116 139;
     --surface-600: 148 163 184;
     --surface-700: 203 213 225;
     --surface-800: 226 232 240;
-    --surface-900: 241 245 249;
-    --surface-950: 248 250 252;
+    --surface-900: 255 255 255;
+    --surface-950: 241 245 249;
     color-scheme: light;
   }
 
@@ -76,6 +80,20 @@
   color: white !important;
 }
 
+/* ── Colores semánticos (badges, alertas, errores) en modo claro ── */
+/* Los tonos -300/-400 (verde, rojo, amarillo, azul, púrpura, naranja)
+   están pensados para leerse sobre fondos oscuros; sobre blanco quedan
+   con muy poco contraste. En claro se oscurecen un paso (o dos, en el
+   caso del amarillo, el más problemático en fondos claros). */
+.light .text-red-400    { color: rgb(220 38 38); }    /* red-600 */
+.light .text-green-300,
+.light .text-green-400  { color: rgb(22 163 74); }    /* green-600 */
+.light .text-yellow-300,
+.light .text-yellow-400 { color: rgb(161 98 7); }     /* yellow-700 */
+.light .text-blue-400   { color: rgb(37 99 235); }    /* blue-600 */
+.light .text-purple-400 { color: rgb(147 51 234); }   /* purple-600 */
+.light .text-orange-400 { color: rgb(234 88 12); }    /* orange-600 */
+
 @layer components {
   /* Clases reutilizables de layout */
   .page-container {
@@ -103,6 +121,12 @@
 
   .field-error {
     @apply text-red-400 text-xs mt-1;
+  }
+  /* @apply "hornea" el color directo en .field-error (no queda la clase
+     text-red-400 en el DOM), así que necesita su propio override acá
+     además del de .light .text-red-400 más abajo. */
+  .light .field-error {
+    color: rgb(220 38 38); /* red-600 */
   }
 
   .checkbox-base {

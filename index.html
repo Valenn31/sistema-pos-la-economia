@@ -5,6 +5,16 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Sistema POS — La Economía</title>
+    <script>
+      // Aplicar el tema guardado ANTES del primer render de React.
+      // Sin esto, la página siempre pinta el tema oscuro por defecto
+      // (definido en :root) y recién después de montar React se agrega
+      // la clase "light", causando un flash oscuro→claro en cada carga.
+      (function () {
+        var theme = localStorage.getItem('pos-theme') || 'dark'
+        document.documentElement.className = theme
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>
