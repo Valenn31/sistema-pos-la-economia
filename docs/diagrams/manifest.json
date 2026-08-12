@@ -1,0 +1,32 @@
+{
+  "d1-arquitectura": {
+    "file": "d1-arquitectura.png",
+    "width": 2200,
+    "height": 1441
+  },
+  "d2-estructura": {
+    "file": "d2-estructura.png",
+    "width": 2200,
+    "height": 1479
+  },
+  "d3-modelo-datos": {
+    "file": "d3-modelo-datos.png",
+    "width": 2200,
+    "height": 1176
+  },
+  "d4-auth-flow": {
+    "file": "d4-auth-flow.png",
+    "width": 2200,
+    "height": 1897
+  },
+  "d5-flujo-venta": {
+    "file": "d5-flujo-venta.png",
+    "width": 2200,
+    "height": 986
+  },
+  "d6-flujo-compras": {
+    "file": "d6-flujo-compras.png",
+    "width": 2200,
+    "height": 1062
+  }
+}

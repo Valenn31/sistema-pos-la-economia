@@ -132,6 +132,19 @@ create table if not exists customers (
   created_at       timestamptz   not null default now()
 );
 
+-- Pagos / abonos de cuenta corriente (créditos). Junto con las ventas
+-- pagadas con method='cuenta' (débitos) arma el estado de cuenta del
+-- cliente — ver customerService.getAccountStatement().
+create table if not exists customer_payments (
+  id          uuid primary key default gen_random_uuid(),
+  customer_id uuid not null references customers(id) on delete cascade,
+  amount      numeric(12,2) not null,
+  method      text not null default 'efectivo',
+  notes       text,
+  user_id     uuid references profiles(id),
+  created_at  timestamptz not null default now()
+);
+
 -- ── 9. DESCUENTOS CONFIGURABLES ─────────────────────────────────────
 
 create table if not exists discounts (
@@ -332,6 +345,7 @@ alter table locations        enable row level security;
 alter table stock            enable row level security;
 alter table stock_movements  enable row level security;
 alter table customers        enable row level security;
+alter table customer_payments enable row level security;
 alter table discounts        enable row level security;
 alter table cash_registers   enable row level security;
 alter table cash_sessions    enable row level security;
@@ -355,6 +369,7 @@ create policy "Autenticados pueden leer" on locations        for select using (a
 create policy "Autenticados pueden leer" on stock            for select using (auth.role() = 'authenticated');
 create policy "Autenticados pueden leer" on stock_movements  for select using (auth.role() = 'authenticated');
 create policy "Autenticados pueden leer" on customers        for select using (auth.role() = 'authenticated');
+create policy "Autenticados pueden leer" on customer_payments for select using (auth.role() = 'authenticated');
 create policy "Autenticados pueden leer" on discounts        for select using (auth.role() = 'authenticated');
 create policy "Autenticados pueden leer" on cash_registers   for select using (auth.role() = 'authenticated');
 create policy "Autenticados pueden leer" on cash_sessions    for select using (auth.role() = 'authenticated');
@@ -381,6 +396,7 @@ create policy "Autenticados pueden escribir" on products         for all using (
 create policy "Autenticados pueden escribir" on stock            for all using (auth.role() = 'authenticated');
 create policy "Autenticados pueden escribir" on stock_movements  for all using (auth.role() = 'authenticated');
 create policy "Autenticados pueden escribir" on customers        for all using (auth.role() = 'authenticated');
+create policy "Autenticados pueden escribir" on customer_payments for all using (auth.role() = 'authenticated');
 create policy "Autenticados pueden escribir" on discounts        for all using (auth.role() = 'authenticated');
 create policy "Autenticados pueden escribir" on cash_registers   for all using (auth.role() = 'authenticated');
 create policy "Autenticados pueden escribir" on cash_sessions    for all using (auth.role() = 'authenticated');
